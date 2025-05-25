@@ -60,8 +60,8 @@ export default function ECGMonitor() {
           wsStatus={wsStatus}
         />
         
-        <div className={`flex-1 sidebar-transition ${getMainContentClass()} flex flex-col`}>
-          <div className="flex-1 min-h-0">
+        <div className={`flex-1 sidebar-transition ${getMainContentClass()} flex flex-col overflow-hidden`}>
+          <div className="flex-1 min-h-0 overflow-auto">
             <MainContent
               currentPatient={currentPatient}
               currentSession={currentSession}
@@ -73,8 +73,8 @@ export default function ECGMonitor() {
             />
           </div>
           
-          {/* AI Diagnosis Panel at bottom */}
-          <div className="h-[450px] border-t bg-background p-4">
+          {/* AI Diagnosis Panel at bottom - Fixed height and visible */}
+          <div className="h-96 border-t bg-background p-4 flex-shrink-0">
             <AIDiagnosisPanel
               currentPatient={currentPatient}
               isRecording={isRecording}
