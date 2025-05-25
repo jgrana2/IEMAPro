@@ -27,34 +27,37 @@ export function ECGCarousel({ leads, isActive }: ECGCarouselProps) {
       if (width < 640) {
         setVisibleLeads(1); // Mobile: 1 lead
       } else if (width < 768) {
-        setVisibleLeads(2); // Small tablet: 2 leads
+        setVisibleLeads(1); // Small tablet: 2 leads
       } else if (width < 1024) {
-        setVisibleLeads(3); // Tablet: 3 leads
+        setVisibleLeads(2); // Tablet: 3 leads
       } else {
-        setVisibleLeads(4); // Desktop: 4 leads
+        setVisibleLeads(3); // Desktop: 4 leads
       }
     };
 
     updateVisibleLeads();
-    window.addEventListener('resize', updateVisibleLeads);
-    return () => window.removeEventListener('resize', updateVisibleLeads);
+    window.addEventListener("resize", updateVisibleLeads);
+    return () => window.removeEventListener("resize", updateVisibleLeads);
   }, []);
 
   const maxIndex = Math.max(0, leads.length - visibleLeads);
 
   const goToNext = () => {
-    setCurrentIndex(prev => Math.min(prev + 1, maxIndex));
+    setCurrentIndex((prev) => Math.min(prev + 1, maxIndex));
   };
 
   const goToPrevious = () => {
-    setCurrentIndex(prev => Math.max(prev - 1, 0));
+    setCurrentIndex((prev) => Math.max(prev - 1, 0));
   };
 
   const goToIndex = (index: number) => {
     setCurrentIndex(Math.min(Math.max(index, 0), maxIndex));
   };
 
-  const visibleLeadsData = leads.slice(currentIndex, currentIndex + visibleLeads);
+  const visibleLeadsData = leads.slice(
+    currentIndex,
+    currentIndex + visibleLeads,
+  );
 
   return (
     <div className="space-y-4">
@@ -70,11 +73,13 @@ export function ECGCarousel({ leads, isActive }: ECGCarouselProps) {
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          
+
           <div className="text-sm text-muted-foreground">
-            Leads {currentIndex + 1}-{Math.min(currentIndex + visibleLeads, leads.length)} of {leads.length}
+            Leads {currentIndex + 1}-
+            {Math.min(currentIndex + visibleLeads, leads.length)} of{" "}
+            {leads.length}
           </div>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -94,8 +99,8 @@ export function ECGCarousel({ leads, isActive }: ECGCarouselProps) {
               onClick={() => goToIndex(index)}
               className={`w-2 h-2 rounded-full transition-colors ${
                 index >= currentIndex && index < currentIndex + visibleLeads
-                  ? 'bg-primary'
-                  : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                  ? "bg-primary"
+                  : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
               }`}
             />
           ))}
@@ -114,11 +119,15 @@ export function ECGCarousel({ leads, isActive }: ECGCarouselProps) {
           <Card key={lead.name} className="lead-card border">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-foreground">{lead.name}</h3>
-                <span className="text-xs text-muted-foreground">{lead.voltage}</span>
+                <h3 className="text-sm font-semibold text-foreground">
+                  {lead.name}
+                </h3>
+                <span className="text-xs text-muted-foreground">
+                  {lead.voltage}
+                </span>
               </div>
               <div className="h-24 bg-black rounded relative overflow-hidden">
-                <ECGCanvas 
+                <ECGCanvas
                   leadName={lead.name}
                   data={lead.data}
                   isActive={isActive}
@@ -144,7 +153,9 @@ export function ECGCarousel({ leads, isActive }: ECGCarouselProps) {
                 : "outline"
             }
             size="sm"
-            onClick={() => goToIndex(Math.max(0, index - Math.floor(visibleLeads / 2)))}
+            onClick={() =>
+              goToIndex(Math.max(0, index - Math.floor(visibleLeads / 2)))
+            }
             className="h-7 text-xs px-2"
           >
             {lead.name}
