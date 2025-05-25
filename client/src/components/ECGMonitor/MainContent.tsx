@@ -75,21 +75,47 @@ export function MainContent({
 
       ECG_LEADS.forEach((lead, index) => {
         const data = [];
+        const beatInterval = 150; // Points between beats (adjust for heart rate)
+        
         for (let i = 0; i < 500; i++) {
           let value = 0;
-
-          // QRS complex simulation
-          if (i % 100 < 5) {
-            value = Math.sin(((i % 100) * Math.PI) / 2.5) * (0.5 + index * 0.1);
+          const beatPosition = i % beatInterval;
+          
+          // P wave (10-20 points)
+          if (beatPosition >= 10 && beatPosition <= 20) {
+            const pPhase = (beatPosition - 10) / 10 * Math.PI;
+            value = 0.15 * Math.sin(pPhase) * (0.8 + index * 0.1);
           }
-          // T wave simulation
-          else if (i % 100 < 20) {
-            value =
-              Math.sin((((i % 100) - 5) * Math.PI) / 15) * (0.2 + index * 0.05);
+          // PR segment (flat)
+          else if (beatPosition > 20 && beatPosition < 40) {
+            value = (Math.random() - 0.5) * 0.02;
           }
-          // Baseline with noise
+          // QRS complex (40-50 points) - main spike
+          else if (beatPosition >= 40 && beatPosition <= 50) {
+            const qrsPhase = (beatPosition - 40) / 10;
+            if (qrsPhase < 0.3) {
+              // Q wave (small negative)
+              value = -0.1 * Math.sin(qrsPhase * Math.PI / 0.3);
+            } else if (qrsPhase < 0.7) {
+              // R wave (large positive)
+              value = 1.2 * Math.sin((qrsPhase - 0.3) * Math.PI / 0.4) * (0.8 + index * 0.2);
+            } else {
+              // S wave (negative)
+              value = -0.3 * Math.sin((qrsPhase - 0.7) * Math.PI / 0.3);
+            }
+          }
+          // ST segment (flat)
+          else if (beatPosition > 50 && beatPosition < 80) {
+            value = (Math.random() - 0.5) * 0.02;
+          }
+          // T wave (80-120 points)
+          else if (beatPosition >= 80 && beatPosition <= 120) {
+            const tPhase = (beatPosition - 80) / 40 * Math.PI;
+            value = 0.3 * Math.sin(tPhase) * (0.9 + index * 0.1);
+          }
+          // Baseline with minimal noise
           else {
-            value = (Math.random() - 0.5) * 0.05;
+            value = (Math.random() - 0.5) * 0.01;
           }
 
           data.push(value);

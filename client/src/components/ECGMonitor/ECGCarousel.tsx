@@ -16,151 +16,84 @@ interface ECGCarouselProps {
 }
 
 export function ECGCarousel({ leads, isActive }: ECGCarouselProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [visibleLeads, setVisibleLeads] = useState(4);
-  const carouselRef = useRef<HTMLDivElement>(null);
+  const [selectedLead, setSelectedLead] = useState(0);
 
-  // Adjust visible leads based on screen size
-  useEffect(() => {
-    const updateVisibleLeads = () => {
-      const width = window.innerWidth;
-      if (width < 640) {
-        setVisibleLeads(1); // Mobile: 1 lead
-      } else if (width < 768) {
-        setVisibleLeads(1); // Small tablet: 2 leads
-      } else if (width < 1024) {
-        setVisibleLeads(2); // Tablet: 3 leads
-      } else {
-        setVisibleLeads(3); // Desktop: 4 leads
-      }
-    };
-
-    updateVisibleLeads();
-    window.addEventListener("resize", updateVisibleLeads);
-    return () => window.removeEventListener("resize", updateVisibleLeads);
-  }, []);
-
-  const maxIndex = Math.max(0, leads.length - visibleLeads);
-
-  const goToNext = () => {
-    setCurrentIndex((prev) => Math.min(prev + 1, maxIndex));
-  };
-
-  const goToPrevious = () => {
-    setCurrentIndex((prev) => Math.max(prev - 1, 0));
-  };
-
-  const goToIndex = (index: number) => {
-    setCurrentIndex(Math.min(Math.max(index, 0), maxIndex));
-  };
-
-  const visibleLeadsData = leads.slice(
-    currentIndex,
-    currentIndex + visibleLeads,
-  );
+  // Show the main ECG display like in the reference image
+  const mainLead = leads[selectedLead] || leads[0];
 
   return (
-    <div className="space-y-4">
-      {/* Carousel Navigation */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={goToPrevious}
-            disabled={currentIndex === 0}
-            className="h-8 w-8 p-0"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-
-          <div className="text-sm text-muted-foreground">
-            Leads {currentIndex + 1}-
-            {Math.min(currentIndex + visibleLeads, leads.length)} of{" "}
-            {leads.length}
+    <div className="space-y-6">
+      {/* Main ECG Display - Large view like in the reference image */}
+      <div className="bg-white rounded-lg border p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900">Sinus Rhythm</h3>
+            <p className="text-sm text-gray-500">Real-time ECG monitoring</p>
           </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={goToNext}
-            disabled={currentIndex >= maxIndex}
-            className="h-8 w-8 p-0"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+              <span className="text-sm font-medium">{mainLead?.name || 'Lead II'}</span>
+            </div>
+            <span className="text-lg font-semibold text-red-600">
+              {mainLead?.voltage || '1.2mV'}
+            </span>
+          </div>
+        </div>
+        
+        {/* Large ECG Canvas */}
+        <div className="bg-white rounded-lg border-2">
+          <ECGCanvas
+            leadName={mainLead?.name || 'Lead II'}
+            data={mainLead?.data || []}
+            isActive={isActive}
+            width={800}
+            height={200}
+          />
         </div>
 
-        {/* Lead Indicators */}
-        <div className="flex space-x-1">
-          {leads.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => goToIndex(index)}
-              className={`w-2 h-2 rounded-full transition-colors ${
-                index >= currentIndex && index < currentIndex + visibleLeads
-                  ? "bg-primary"
-                  : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+        {/* Time markers */}
+        <div className="flex justify-between mt-2 px-2">
+          <span className="text-xs text-gray-400">0s</span>
+          <span className="text-xs text-gray-400">1s</span>
+          <span className="text-xs text-gray-400">2s</span>
+        </div>
+      </div>
+
+      {/* Lead Selection Grid */}
+      <div className="bg-white rounded-lg border p-4">
+        <h4 className="text-lg font-semibold mb-4">ECG Leads</h4>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {leads.map((lead, index) => (
+            <Card 
+              key={lead.name} 
+              className={`cursor-pointer transition-all hover:shadow-md ${
+                selectedLead === index ? 'ring-2 ring-red-500 bg-red-50' : ''
               }`}
-            />
+              onClick={() => setSelectedLead(index)}
+            >
+              <CardContent className="p-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h5 className="font-medium text-sm">{lead.name}</h5>
+                    <span className="text-xs text-muted-foreground">
+                      {lead.voltage}
+                    </span>
+                  </div>
+                  <div className="bg-white rounded border">
+                    <ECGCanvas
+                      leadName={lead.name}
+                      data={lead.data}
+                      isActive={isActive}
+                      width={200}
+                      height={80}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
-      </div>
-
-      {/* Carousel Content */}
-      <div
-        ref={carouselRef}
-        className="grid gap-4 transition-all duration-300"
-        style={{
-          gridTemplateColumns: `repeat(${visibleLeads}, 1fr)`,
-        }}
-      >
-        {visibleLeadsData.map((lead, index) => (
-          <Card key={lead.name} className="lead-card border">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-foreground">
-                  {lead.name}
-                </h3>
-                <span className="text-xs text-muted-foreground">
-                  {lead.voltage}
-                </span>
-              </div>
-              <div className="h-24 bg-black rounded relative overflow-hidden">
-                <ECGCanvas
-                  leadName={lead.name}
-                  data={lead.data}
-                  isActive={isActive}
-                  width={300}
-                  height={96}
-                />
-                {/* Grid overlay */}
-                <div className="absolute inset-0 ecg-grid-pattern pointer-events-none" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Quick Jump Navigation */}
-      <div className="flex flex-wrap gap-1 justify-center">
-        {leads.map((lead, index) => (
-          <Button
-            key={lead.name}
-            variant={
-              index >= currentIndex && index < currentIndex + visibleLeads
-                ? "default"
-                : "outline"
-            }
-            size="sm"
-            onClick={() =>
-              goToIndex(Math.max(0, index - Math.floor(visibleLeads / 2)))
-            }
-            className="h-7 text-xs px-2"
-          >
-            {lead.name}
-          </Button>
-        ))}
       </div>
     </div>
   );
