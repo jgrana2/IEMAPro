@@ -41,6 +41,7 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
   ]);
   const [inputValue, setInputValue] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -135,24 +136,24 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
   };
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
+    // Scroll to bottom when new messages are added
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   return (
     <Card className="h-full">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Bot className="h-5 w-5 text-blue-500" />
-            AI-Assisted Diagnosis
+      <CardHeader className="pb-3 px-3 sm:px-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+            <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
+            <span className="hidden sm:inline">AI-Assisted Diagnosis</span>
+            <span className="sm:hidden">AI Diagnosis</span>
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {isRecording && (
-              <Badge variant="outline" className="text-green-600 border-green-600">
+              <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
                 <Activity className="h-3 w-3 mr-1" />
-                Live Analysis
+                Live
               </Badge>
             )}
             <Button
@@ -160,14 +161,16 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
               variant="outline"
               onClick={analyzeCurrentECG}
               disabled={isAnalyzing || ecgData.length === 0}
+              className="text-xs sm:text-sm"
             >
-              <Heart className="h-4 w-4 mr-1" />
-              Analyze Current ECG
+              <Heart className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+              <span className="hidden sm:inline">Analyze Current ECG</span>
+              <span className="sm:hidden">Analyze</span>
             </Button>
           </div>
         </div>
         {currentPatient && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Patient: {currentPatient.firstName} {currentPatient.lastName} (ID: {currentPatient.patientId})
           </p>
         )}
@@ -175,26 +178,26 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
       <CardContent className="p-0">
         <div className="flex flex-col h-full">
           {/* Messages Area */}
-          <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-            <div className="space-y-4">
+          <ScrollArea className="flex-1 px-2 sm:px-4" ref={scrollAreaRef}>
+            <div className="space-y-3 py-2">
               {messages.map((message) => (
                 <div
                   key={message.id}
                   className={cn(
-                    "flex gap-3",
+                    "flex gap-2 sm:gap-3",
                     message.role === "user" ? "justify-end" : "justify-start"
                   )}
                 >
                   {message.role === "assistant" && (
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0">
                       <AvatarFallback className="bg-blue-100 text-blue-600">
-                        <Bot className="h-4 w-4" />
+                        <Bot className="h-3 w-3 sm:h-4 sm:w-4" />
                       </AvatarFallback>
                     </Avatar>
                   )}
                   <div
                     className={cn(
-                      "max-w-[80%] rounded-lg p-3 text-sm",
+                      "max-w-[85%] sm:max-w-[80%] rounded-lg p-2 sm:p-3 text-xs sm:text-sm",
                       message.role === "user"
                         ? "bg-primary text-primary-foreground ml-auto"
                         : "bg-muted"
@@ -204,19 +207,19 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
                     
                     {/* ECG Analysis Results */}
                     {message.analysis && (
-                      <div className="mt-3 space-y-2 border-t pt-2">
-                        <div className="flex items-center gap-2 text-xs font-medium">
+                      <div className="mt-2 sm:mt-3 space-y-1 sm:space-y-2 border-t pt-2">
+                        <div className="flex items-center gap-1 sm:gap-2 text-xs font-medium">
                           <Heart className="h-3 w-3" />
                           ECG Analysis Results
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-2 text-xs">
                           <div>
                             <span className="font-medium">Heart Rate:</span> {message.analysis.heartRate} BPM
                           </div>
                           <div>
                             <span className="font-medium">Rhythm:</span> {message.analysis.rhythm}
                           </div>
-                          <div className="col-span-2">
+                          <div className="sm:col-span-2">
                             <span className="font-medium">Confidence:</span> {Math.round(message.analysis.confidence * 100)}%
                           </div>
                         </div>
@@ -231,7 +234,7 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
                               {message.analysis.abnormalities.map((abnormality, index) => (
                                 <li key={index} className="flex items-start gap-1">
                                   <span className="text-orange-500">•</span>
-                                  {abnormality}
+                                  <span className="break-words">{abnormality}</span>
                                 </li>
                               ))}
                             </ul>
@@ -245,7 +248,7 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
                               {message.analysis.recommendations.map((recommendation, index) => (
                                 <li key={index} className="flex items-start gap-1">
                                   <span className="text-blue-500">•</span>
-                                  {recommendation}
+                                  <span className="break-words">{recommendation}</span>
                                 </li>
                               ))}
                             </ul>
@@ -254,14 +257,14 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
                       </div>
                     )}
                     
-                    <div className="text-xs text-muted-foreground mt-2">
+                    <div className="text-xs text-muted-foreground mt-1 sm:mt-2">
                       {message.timestamp.toLocaleTimeString()}
                     </div>
                   </div>
                   {message.role === "user" && (
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0">
                       <AvatarFallback className="bg-gray-100 text-gray-600">
-                        <User className="h-4 w-4" />
+                        <User className="h-3 w-3 sm:h-4 sm:w-4" />
                       </AvatarFallback>
                     </Avatar>
                   )}
@@ -269,66 +272,76 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
               ))}
               
               {isAnalyzing && (
-                <div className="flex gap-3">
-                  <Avatar className="h-8 w-8">
+                <div className="flex gap-2 sm:gap-3">
+                  <Avatar className="h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0">
                     <AvatarFallback className="bg-blue-100 text-blue-600">
-                      <Bot className="h-4 w-4" />
+                      <Bot className="h-3 w-3 sm:h-4 sm:w-4" />
                     </AvatarFallback>
                   </Avatar>
-                  <div className="bg-muted rounded-lg p-3 text-sm">
+                  <div className="bg-muted rounded-lg p-2 sm:p-3 text-xs sm:text-sm">
                     <div className="flex items-center gap-2">
-                      <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                      <div className="animate-spin h-3 w-3 sm:h-4 sm:w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
                       Analyzing ECG data...
                     </div>
                   </div>
                 </div>
               )}
+              
+              {/* Scroll anchor */}
+              <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
           
           {/* Input Area */}
-          <div className="border-t p-4">
+          <div className="border-t p-2 sm:p-4">
             <div className="flex gap-2">
               <Input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ask about the ECG data, request analysis, or describe symptoms..."
-                className="flex-1"
+                placeholder="Ask about ECG data or request analysis..."
+                className="flex-1 text-xs sm:text-sm"
                 disabled={isAnalyzing}
               />
               <Button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() || isAnalyzing}
                 size="icon"
+                className="h-8 w-8 sm:h-10 sm:w-10"
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
-            <div className="flex gap-2 mt-2">
+            <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setInputValue("Please analyze the last 10 seconds of ECG data")}
                 disabled={isAnalyzing}
+                className="text-xs px-2 py-1 h-auto"
               >
-                Analyze Last 10s
+                <span className="hidden sm:inline">Analyze Last 10s</span>
+                <span className="sm:hidden">Last 10s</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setInputValue("What abnormalities do you detect?")}
                 disabled={isAnalyzing}
+                className="text-xs px-2 py-1 h-auto"
               >
-                Check Abnormalities
+                <span className="hidden sm:inline">Check Abnormalities</span>
+                <span className="sm:hidden">Abnormalities</span>
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setInputValue("Provide diagnostic recommendations")}
                 disabled={isAnalyzing}
+                className="text-xs px-2 py-1 h-auto"
               >
-                Get Recommendations
+                <span className="hidden sm:inline">Get Recommendations</span>
+                <span className="sm:hidden">Recommendations</span>
               </Button>
             </div>
           </div>
