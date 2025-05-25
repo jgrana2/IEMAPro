@@ -173,7 +173,7 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
         )}
       </CardHeader>
       <CardContent className="p-0">
-        <div className="flex flex-col h-[400px]">
+        <div className="flex flex-col h-full">
           {/* Messages Area */}
           <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
             <div className="space-y-4">

@@ -17,6 +17,7 @@ export default function ECGMonitor() {
   const [currentSession, setCurrentSession] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [ecgData, setEcgData] = useState<any[]>([]);
+  const [aiPanelExpanded, setAiPanelExpanded] = useState(true);
 
   // Main content margin classes based on sidebar states
   const getMainContentClass = () => {
@@ -73,13 +74,28 @@ export default function ECGMonitor() {
             />
           </div>
           
-          {/* AI Diagnosis Panel at bottom - Fixed height and visible */}
-          <div className="h-96 border-t bg-background p-4 flex-shrink-0">
-            <AIDiagnosisPanel
-              currentPatient={currentPatient}
-              isRecording={isRecording}
-              ecgData={ecgData}
-            />
+          {/* AI Diagnosis Panel at bottom - Collapsible */}
+          <div className={`border-t bg-background flex-shrink-0 transition-all duration-300 ${
+            aiPanelExpanded ? 'h-96' : 'h-12'
+          }`}>
+            <div className="flex items-center justify-between p-2 border-b">
+              <h3 className="text-sm font-medium">AI-Assisted Diagnosis</h3>
+              <button
+                onClick={() => setAiPanelExpanded(!aiPanelExpanded)}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                {aiPanelExpanded ? '−' : '+'}
+              </button>
+            </div>
+            {aiPanelExpanded && (
+              <div className="p-4 h-[calc(100%-3rem)]">
+                <AIDiagnosisPanel
+                  currentPatient={currentPatient}
+                  isRecording={isRecording}
+                  ecgData={ecgData}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
