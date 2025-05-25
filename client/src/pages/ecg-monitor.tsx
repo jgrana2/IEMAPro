@@ -9,10 +9,11 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { useBluetooth } from "@/hooks/useBluetooth";
 
 export default function ECGMonitor() {
-  const { leftExpanded, rightExpanded, toggleLeft, toggleRight } = useSidebarState();
+  const { leftExpanded, rightExpanded, toggleLeft, toggleRight } =
+    useSidebarState();
   const { wsStatus, sendMessage } = useWebSocket();
   const { bleStatus, devices, scanDevices, connectDevice } = useBluetooth();
-  
+
   const [currentPatient, setCurrentPatient] = useState<any>(null);
   const [currentSession, setCurrentSession] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -24,7 +25,7 @@ export default function ECGMonitor() {
     if (window.innerWidth < 768) {
       return "main-content-mobile";
     }
-    
+
     if (leftExpanded && rightExpanded) {
       return "main-content-both";
     } else if (leftExpanded) {
@@ -60,8 +61,10 @@ export default function ECGMonitor() {
           bleStatus={bleStatus}
           wsStatus={wsStatus}
         />
-        
-        <div className={`flex-1 sidebar-transition ${getMainContentClass()} flex flex-col overflow-hidden`}>
+
+        <div
+          className={`flex-1 sidebar-transition ${getMainContentClass()} flex flex-col overflow-hidden`}
+        >
           <div className="flex-1 min-h-0 overflow-auto">
             <MainContent
               currentPatient={currentPatient}
@@ -73,18 +76,20 @@ export default function ECGMonitor() {
               wsStatus={wsStatus}
             />
           </div>
-          
+
           {/* AI Diagnosis Panel at bottom - Collapsible */}
-          <div className={`border-t bg-background flex-shrink-0 transition-all duration-300 ${
-            aiPanelExpanded ? 'h-96' : 'h-12'
-          }`}>
+          <div
+            className={`border-t bg-background flex-shrink-0 transition-all duration-300 ${
+              aiPanelExpanded ? "h-[410px]" : "h-12"
+            }`}
+          >
             <div className="flex items-center justify-between p-2 border-b">
               <h3 className="text-sm font-medium">AI-Assisted Diagnosis</h3>
               <button
                 onClick={() => setAiPanelExpanded(!aiPanelExpanded)}
                 className="p-1 hover:bg-gray-100 rounded"
               >
-                {aiPanelExpanded ? '−' : '+'}
+                {aiPanelExpanded ? "−" : "+"}
               </button>
             </div>
             {aiPanelExpanded && (
@@ -113,7 +118,7 @@ export default function ECGMonitor() {
 
       {/* Mobile Overlay */}
       {(leftExpanded || rightExpanded) && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
           onClick={() => {
             if (leftExpanded) toggleLeft();
