@@ -118,7 +118,7 @@ export function ECGCarousel({ leads, isActive }: ECGCarouselProps) {
         {visibleLeadsData.map((lead, index) => (
           <Card key={lead.name} className="lead-card border">
             <CardContent className="p-0">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between border-b">
                 <h3 className="text-sm font-semibold text-foreground p-2">
                   {lead.name}
                 </h3>
@@ -126,7 +126,7 @@ export function ECGCarousel({ leads, isActive }: ECGCarouselProps) {
                   {lead.voltage}
                 </span>
               </div>
-              <div className="h-24 bg-white rounded relative overflow-hidden">
+              <div className="h-24 bg-white relative overflow-hidden">
                 <ECGCanvas
                   leadName={lead.name}
                   data={lead.data}
