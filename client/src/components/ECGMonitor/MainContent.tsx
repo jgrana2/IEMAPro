@@ -42,7 +42,7 @@ export function MainContent({
   onStartRecording,
   onStopRecording,
   bleStatus,
-  wsStatus
+  wsStatus,
 }: MainContentProps) {
   const [heartRate, setHeartRate] = useState(72);
   const [ecgData, setEcgData] = useState<{ [key: string]: number[] }>({});
@@ -57,7 +57,7 @@ export function MainContent({
   // Simulate heart rate variations
   useEffect(() => {
     const interval = setInterval(() => {
-      setHeartRate(prev => {
+      setHeartRate((prev) => {
         const variation = Math.floor(Math.random() * 6) - 3; // ±3 BPM
         return Math.max(60, Math.min(100, prev + variation));
       });
@@ -72,42 +72,43 @@ export function MainContent({
       const timestamp = Date.now();
       const newData: { [key: string]: number[] } = {};
       const leadsData: { [leadName: string]: number } = {};
-      
+
       ECG_LEADS.forEach((lead, index) => {
         const data = [];
         for (let i = 0; i < 500; i++) {
           let value = 0;
-          
+
           // QRS complex simulation
           if (i % 100 < 5) {
-            value = Math.sin((i % 100) * Math.PI / 2.5) * (0.5 + index * 0.1);
+            value = Math.sin(((i % 100) * Math.PI) / 2.5) * (0.5 + index * 0.1);
           }
           // T wave simulation
           else if (i % 100 < 20) {
-            value = Math.sin((i % 100 - 5) * Math.PI / 15) * (0.2 + index * 0.05);
+            value =
+              Math.sin((((i % 100) - 5) * Math.PI) / 15) * (0.2 + index * 0.05);
           }
           // Baseline with noise
           else {
             value = (Math.random() - 0.5) * 0.05;
           }
-          
+
           data.push(value);
         }
         newData[lead.name] = data;
         leadsData[lead.name] = generateSimulatedECGData(lead.name, timestamp);
       });
-      
+
       setEcgData(newData);
-      
+
       // Store ECG data point for history
       if (isRecording) {
         const ecgDataPoint: ECGData = {
           timestamp,
           leads: leadsData,
           heartRate,
-          quality: 'good'
+          quality: "good",
         };
-        setEcgHistory(prev => [...prev.slice(-999), ecgDataPoint]); // Keep last 1000 points
+        setEcgHistory((prev) => [...prev.slice(-999), ecgDataPoint]); // Keep last 1000 points
       }
     };
 
@@ -133,20 +134,24 @@ export function MainContent({
         startTime: new Date(),
         endTime: new Date(),
         duration: Math.floor(ecgHistory.length * 0.1), // Approximate duration in seconds
-        heartRate: heartRate
+        heartRate: heartRate,
       };
 
-      const pdfBlob = await generateECGReport(currentPatient, sessionInfo, ecgHistory);
-      const filename = `ECG_Report_${currentPatient.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
-      
+      const pdfBlob = await generateECGReport(
+        currentPatient,
+        sessionInfo,
+        ecgHistory,
+      );
+      const filename = `ECG_Report_${currentPatient.name.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
+
       await downloadPDF(pdfBlob, filename);
-      
+
       toast({
         title: "PDF Generated",
         description: `ECG report for ${currentPatient.name} has been downloaded.`,
       });
     } catch (error) {
-      console.error('PDF generation error:', error);
+      console.error("PDF generation error:", error);
       toast({
         title: "PDF Generation Failed",
         description: "Failed to generate PDF report. Please try again.",
@@ -157,10 +162,14 @@ export function MainContent({
 
   const getLogLevelColor = (level: string) => {
     switch (level) {
-      case 'error': return 'text-red-500';
-      case 'warning': return 'text-yellow-500';
-      case 'info': return 'text-green-500';
-      default: return 'text-muted-foreground';
+      case "error":
+        return "text-red-500";
+      case "warning":
+        return "text-yellow-500";
+      case "info":
+        return "text-green-500";
+      default:
+        return "text-muted-foreground";
     }
   };
 
@@ -169,33 +178,36 @@ export function MainContent({
       <div className="flex-1 p-6">
         {/* ECG Header */}
         <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">12-Lead ECG Monitoring</h2>
+          <div className="flex flex-col items-center justify-between">
+            <div className="text-center">
+              <h2 className="text-lg font-semibold text-foreground">
+                12-Lead ECG Monitoring
+              </h2>
               <p className="text-sm text-muted-foreground">
-                {currentPatient ? `Patient: ${currentPatient.name} (ID: ${currentPatient.patientId})` : 'No patient selected'}
+                {currentPatient
+                  ? `Patient: ${currentPatient.name} (ID: ${currentPatient.patientId})`
+                  : "No patient selected"}
               </p>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row justify-between w-full items-center">
               <div className="text-right">
                 <p className="text-xs text-muted-foreground">Heart Rate</p>
-                <p className="text-2xl font-bold text-red-500">{heartRate} BPM</p>
+                <p className="text-2xl font-bold text-red-500">
+                  {heartRate} BPM
+                </p>
               </div>
-              <div className="flex space-x-2">
+              <div className="flex">
                 {!isRecording ? (
-                  <Button 
+                  <Button
                     onClick={onStartRecording}
                     className="bg-green-600 hover:bg-green-700"
-                    disabled={!currentPatient || bleStatus !== 'connected'}
+                    disabled={!currentPatient || bleStatus !== "connected"}
                   >
                     <Play className="h-4 w-4 mr-2" />
                     Start Recording
                   </Button>
                 ) : (
-                  <Button 
-                    onClick={onStopRecording}
-                    variant="destructive"
-                  >
+                  <Button onClick={onStopRecording} variant="destructive">
                     <Square className="h-4 w-4 mr-2" />
                     Stop Recording
                   </Button>
@@ -230,12 +242,12 @@ export function MainContent({
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            <ECGCarousel 
-              leads={ECG_LEADS.map(lead => ({
+            <ECGCarousel
+              leads={ECG_LEADS.map((lead) => ({
                 ...lead,
-                data: ecgData[lead.name] || []
+                data: ecgData[lead.name] || [],
               }))}
-              isActive={bleStatus === 'connected'}
+              isActive={bleStatus === "connected"}
             />
           </CardContent>
         </Card>
@@ -244,11 +256,16 @@ export function MainContent({
       {/* System Logs */}
       <div className="border-t border-border bg-card">
         <div className="p-4">
-          <h3 className="text-sm font-semibold text-foreground mb-3">System Messages</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">
+            System Messages
+          </h3>
           <ScrollArea className="h-24">
             <div className="space-y-1">
               {systemLogs.slice(0, 10).map((log: any) => (
-                <div key={log.id} className="text-xs font-mono flex items-center space-x-2">
+                <div
+                  key={log.id}
+                  className="text-xs font-mono flex items-center space-x-2"
+                >
                   <span className="text-muted-foreground">
                     [{new Date(log.timestamp).toLocaleTimeString()}]
                   </span>
