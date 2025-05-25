@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 11% 98%; /* #F8FAFC */
+  --foreground: 222 84% 4.9%; /* #1E293B */
+  --muted: 210 40% 96%; /* #F1F5F9 */
+  --muted-foreground: 215 16% 46.9%; /* #64748B */
+  --popover: 0 0% 100%; /* #FFFFFF */
+  --popover-foreground: 222 84% 4.9%; /* #1E293B */
+  --card: 0 0% 100%; /* #FFFFFF */
+  --card-foreground: 222 84% 4.9%; /* #1E293B */
+  --border: 214 32% 91%; /* #E2E8F0 */
+  --input: 214 32% 91%; /* #E2E8F0 */
+  --primary: 221 83% 53%; /* #2563EB */
+  --primary-foreground: 210 40% 98%; /* #F8FAFC */
+  --secondary: 210 40% 96%; /* #F1F5F9 */
+  --secondary-foreground: 222 84% 4.9%; /* #1E293B */
+  --accent: 210 40% 96%; /* #F1F5F9 */
+  --accent-foreground: 222 84% 4.9%; /* #1E293B */
+  --destructive: 0 84.2% 60.2%; /* #DC2626 */
+  --destructive-foreground: 60 9.1% 97.8%; /* #FEF2F2 */
+  --ring: 221 83% 53%; /* #2563EB */
+  --radius: 0.5rem;
+  
+  /* Medical-specific colors */
+  --medical-blue: 221 83% 53%; /* #2563EB */
+  --medical-blue-dark: 221 83% 43%; /* #1D4ED8 */
+  --medical-green: 158 64% 52%; /* #10B981 */
+  --medical-orange: 25 95% 53%; /* #F97316 */
+  --medical-red: 0 84% 60%; /* #DC2626 */
+  --medical-bg: 210 11% 98%; /* #F8FAFC */
+  --medical-border: 214 32% 91%; /* #E2E8F0 */
+  --medical-text: 215 16% 47%; /* #64748B */
+  --medical-dark: 222 84% 5%; /* #1E293B */
+}
+
+.dark {
+  --background: 222 84% 4.9%; /* #1E293B */
+  --foreground: 210 40% 98%; /* #F8FAFC */
+  --muted: 215 28% 17%; /* #334155 */
+  --muted-foreground: 217 9% 61%; /* #94A3B8 */
+  --popover: 222 84% 4.9%; /* #1E293B */
+  --popover-foreground: 210 40% 98%; /* #F8FAFC */
+  --card: 222 84% 4.9%; /* #1E293B */
+  --card-foreground: 210 40% 98%; /* #F8FAFC */
+  --border: 215 28% 17%; /* #334155 */
+  --input: 215 28% 17%; /* #334155 */
+  --primary: 217 91% 60%; /* #3B82F6 */
+  --primary-foreground: 222 84% 5%; /* #1E293B */
+  --secondary: 215 28% 17%; /* #334155 */
+  --secondary-foreground: 210 40% 98%; /* #F8FAFC */
+  --accent: 215 28% 17%; /* #334155 */
+  --accent-foreground: 210 40% 98%; /* #F8FAFC */
+  --destructive: 0 62.8% 30.6%; /* #991B1B */
+  --destructive-foreground: 210 40% 98%; /* #F8FAFC */
+  --ring: 217 91% 60%; /* #3B82F6 */
+  
+  /* Medical-specific dark colors */
+  --medical-blue: 217 91% 60%; /* #3B82F6 */
+  --medical-blue-dark: 217 91% 50%; /* #2563EB */
+  --medical-green: 158 64% 52%; /* #10B981 */
+  --medical-orange: 25 95% 53%; /* #F97316 */
+  --medical-red: 0 84% 60%; /* #DC2626 */
+  --medical-bg: 222 84% 5%; /* #1E293B */
+  --medical-border: 215 28% 17%; /* #334155 */
+  --medical-text: 217 9% 61%; /* #94A3B8 */
+  --medical-dark: 210 40% 98%; /* #F8FAFC */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .sidebar-transition {
+    transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .ecg-wave {
+    stroke: hsl(var(--medical-green));
+    stroke-width: 2;
+    fill: none;
+  }
+  
+  .lead-card {
+    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--muted)) 100%);
+    border: 1px solid hsl(var(--border));
+  }
+  
+  .status-indicator {
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  
+  .collapsed-sidebar {
+    width: 60px !important;
+  }
+  
+  .expanded-sidebar-left {
+    width: 280px !important;
+  }
+  
+  .expanded-sidebar-right {
+    width: 320px !important;
+  }
+  
+  .main-content-full {
+    margin-left: 60px;
+    margin-right: 60px;
+  }
+  
+  .main-content-left {
+    margin-left: 280px;
+    margin-right: 60px;
+  }
+  
+  .main-content-right {
+    margin-left: 60px;
+    margin-right: 320px;
+  }
+  
+  .main-content-both {
+    margin-left: 280px;
+    margin-right: 320px;
+  }
+  
+  .ecg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, hsl(var(--medical-green)) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--medical-green)) 1px, transparent 1px);
+    background-size: 20px 10px;
+    opacity: 0.3;
+  }
+  
+  @media (max-width: 768px) {
+    .sidebar-mobile {
+      position: fixed;
+      z-index: 50;
+      transform: translateX(-100%);
+    }
+    
+    .sidebar-mobile.open {
+      transform: translateX(0);
+    }
+    
+    .sidebar-mobile-right {
+      transform: translateX(100%);
+    }
+    
+    .sidebar-mobile-right.open {
+      transform: translateX(0);
+    }
+    
+    .main-content-mobile {
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+    }
+  }
+}
