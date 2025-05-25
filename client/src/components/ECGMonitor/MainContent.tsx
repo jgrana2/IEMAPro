@@ -178,8 +178,8 @@ export function MainContent({
       <div className="flex-1 p-6">
         {/* ECG Header */}
         <div className="mb-6">
-          <div className="flex flex-col items-center justify-between">
-            <div className="text-center">
+          <div className="flex flex-col sm:flex-row items-center justify-between">
+            <div className="text-center sm:text-left">
               <h2 className="text-lg font-semibold text-foreground">
                 12-Lead ECG Monitoring
               </h2>
@@ -189,35 +189,32 @@ export function MainContent({
                   : "No patient selected"}
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row justify-between w-full items-center">
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">Heart Rate</p>
-                <p className="text-2xl font-bold text-red-500">
-                  {heartRate} BPM
-                </p>
-              </div>
-              <div className="flex">
-                {!isRecording ? (
-                  <Button
-                    onClick={onStartRecording}
-                    className="bg-green-600 hover:bg-green-700"
-                    disabled={!currentPatient || bleStatus !== "connected"}
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Start Recording
-                  </Button>
-                ) : (
-                  <Button onClick={onStopRecording} variant="destructive">
-                    <Square className="h-4 w-4 mr-2" />
-                    Stop Recording
-                  </Button>
-                )}
-                {isRecording && (
-                  <Badge variant="destructive" className="animate-pulse">
-                    Recording
-                  </Badge>
-                )}
-              </div>
+
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Heart Rate</p>
+              <p className="text-2xl font-bold text-red-500">{heartRate} BPM</p>
+            </div>
+            <div className="flex">
+              {!isRecording ? (
+                <Button
+                  onClick={onStartRecording}
+                  className="bg-green-600 hover:bg-green-700"
+                  disabled={!currentPatient || bleStatus !== "connected"}
+                >
+                  <Play className="h-4 w-4 mr-2" />
+                  Start Recording
+                </Button>
+              ) : (
+                <Button onClick={onStopRecording} variant="destructive">
+                  <Square className="h-4 w-4 mr-2" />
+                  Stop Recording
+                </Button>
+              )}
+              {isRecording && (
+                <Badge variant="destructive" className="animate-pulse">
+                  Recording
+                </Badge>
+              )}
             </div>
           </div>
         </div>
