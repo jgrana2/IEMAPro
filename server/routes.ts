@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
+import { analyzeECGWithAI } from "./ai-diagnosis";
 import { insertPatientSchema, insertBleDeviceSchema, insertRecordingSessionSchema, insertSystemLogSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -138,6 +139,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(session);
     } catch (error) {
       res.status(500).json({ error: "Failed to update recording session" });
+    }
+  });
+
+  // AI Diagnosis route
+  app.post("/api/ai-diagnosis", async (req, res) => {
+    try {
+      const { message, ecgData } = req.body;
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+      
+      const result = await analyzeECGWithAI({ message, ecgData });
+      res.json(result);
+    } catch (error) {
+      console.error("AI Diagnosis Error:", error);
+      res.status(500).json({ error: "Failed to analyze ECG data with AI" });
     }
   });
 
