@@ -136,8 +136,16 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
   };
 
   useEffect(() => {
-    // Scroll to bottom when new messages are added
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Only auto-scroll to bottom when new messages are added, but allow manual scrolling
+    const scrollContainer = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (scrollContainer) {
+      const isNearBottom = scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 100;
+      
+      // Only auto-scroll if user is near the bottom
+      if (isNearBottom) {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
+    }
   }, [messages]);
 
   return (
@@ -175,10 +183,10 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
           </p>
         )}
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="flex flex-col h-full">
-          {/* Messages Area */}
-          <ScrollArea className="flex-1 px-2 sm:px-4" ref={scrollAreaRef}>
+      <CardContent className="p-0 flex flex-col h-full">
+        {/* Messages Area - Fixed height with scroll */}
+        <div className="flex-1 min-h-0">
+          <ScrollArea className="h-full px-2 sm:px-4" ref={scrollAreaRef}>
             <div className="space-y-3 py-2">
               {messages.map((message) => (
                 <div
@@ -291,9 +299,10 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
+        </div>
           
-          {/* Input Area */}
-          <div className="border-t p-2 sm:p-4">
+        {/* Input Area - Pinned to bottom */}
+        <div className="border-t p-2 sm:p-4 flex-shrink-0">
             <div className="flex gap-2">
               <Input
                 value={inputValue}
@@ -344,7 +353,6 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
                 <span className="sm:hidden">Recommendations</span>
               </Button>
             </div>
-          </div>
         </div>
       </CardContent>
     </Card>
