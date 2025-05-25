@@ -220,7 +220,7 @@ export function MainContent({
                   variant="outline"
                   size="sm"
                   onClick={handleGeneratePDF}
-                  disabled={!currentPatient || !isRecording}
+                  disabled={!currentPatient}
                   className="flex items-center space-x-2"
                 >
                   <FileText className="h-4 w-4" />

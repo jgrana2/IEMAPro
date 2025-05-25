@@ -42,8 +42,21 @@ export function PatientDialog({ open, onOpenChange, patient, onPatientCreated }:
   });
 
   const createPatientMutation = useMutation({
-    mutationFn: (data: z.infer<typeof patientFormSchema>) =>
-      apiRequest("/api/patients", { method: "POST", body: data }),
+    mutationFn: async (data: z.infer<typeof patientFormSchema>) => {
+      const response = await fetch("/api/patients", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to create patient");
+      }
+      
+      return response.json();
+    },
     onSuccess: (newPatient) => {
       queryClient.invalidateQueries({ queryKey: ["/api/patients"] });
       toast({
@@ -131,7 +144,7 @@ export function PatientDialog({ open, onOpenChange, patient, onPatientCreated }:
                 <FormItem>
                   <FormLabel>Date of Birth</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input type="date" {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -173,6 +186,7 @@ export function PatientDialog({ open, onOpenChange, patient, onPatientCreated }:
                       placeholder="Any relevant medical history or notes..."
                       className="resize-none"
                       {...field}
+                      value={field.value || ""}
                     />
                   </FormControl>
                   <FormMessage />
