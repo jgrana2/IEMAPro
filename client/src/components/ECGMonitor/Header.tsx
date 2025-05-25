@@ -66,7 +66,9 @@ export function Header({
           </div>
           <div>
             <h1 className="text-lg font-semibold text-foreground">IEMA Pro</h1>
-            <h2 className="text-xs text-muted-foreground">ECG Analysis</h2>
+            <h2 className="text-xs text-muted-foreground">
+              Real-time AI-assisted ECG Analysis
+            </h2>
           </div>
         </div>
       </div>

@@ -1,0 +1,49 @@
++-------------------------------------------------------------------------------------------------------------+
+| Patient & Device                |            IEMA Pro                     |       Recording Sessions         |
+|---------------------------------|-----------------------------------------|----------------------------------|
+| Current Patient                 | Real-time AI-assisted ECG Analysis      | Current Recording                |
+| [Sarah Johnson]                 |                                         |  Status: [Stopped]               |
+|  [Select Patient ▼]  [+]        |  12-Lead ECG Monitoring                |                                  |
+|---------------------------------|  Patient: Sarah Johnson (ID: PAT-12345)| Recent Sessions                  |
+| BLE ECG Device                  |                                         |  -                               |
+| [Scan for Devices]              |-----------------------------------------|                                  |
+|  [●] ECG Pro 12-Lead Monitor    |  Heart Rate:          60 BPM           |                                  |
+|      RSSI: -45 dBm              |      [Start Recording]                 |                                  |
+|---------------------------------|-----------------------------------------|----------------------------------|
+| Buffer Configuration            |                                         |                                  |
+| Buffer Size (samples) [250]     |   12-Lead ECG Display                  |                                  |
+| Sample Rate (Hz)   [1000▼]      | < Leads 1-3 of 12 >                    |                                  |
+|---------------------------------|  +-------------------+                 |                                  |
+| WebSocket Server                |  | Lead I           | 1.2mV |          |                                  |
+| Server URL: ws://localhost...   |  |-------------------|                 |                                  |
+| [Connect] [Disconnect]          |  | (waveform graph)  |                 |                                  |
+|---------------------------------|  +-------------------+                 |                                  |
+|                                 |  +-------------------+                 |                                  |
+| System Messages                 |  | Lead II          | 0.8mV |          |                                  |
+| [14:41:03] WS client connected  |  |-------------------|                 |                                  |
+| [14:40:59] WS client disconn... |  | (waveform graph)  |                 |                                  |
+| ...                             |  +-------------------+                 |                                  |
++---------------------------------+  +-------------------+                 +----------------------------------+
+                                    | Lead III         | 1.0mV |           |                                  |
+                                    |-------------------|                 |                                  |
+                                    | (waveform graph)  |                 |                                  |
+                                    +-------------------+                 |                                  |
+                                   [Lead I] [Lead II] [Lead III] ...      |                                  |
+                                    [aVR] [aVL] [aVF] [V1] [V2] ...       |                                  |
+                                   -----------------------------------    |                                  |
+                                   |     [Generate PDF Report]       |    |                                  |
+                                   -----------------------------------    |                                  |
++-----------------------------------------------------------------------------------------------------------------+
+|                                                                                                                 |
+|   CHATBOT / AI DIAGNOSIS                                                                                        |
+|   +-------------------------------------------------------------------------+                                   |
+|   | [AI]: Upload or select an ECG lead to analyze.                          |                                   |
+|   | [User]: Please analyze the last 10 seconds.                             |                                   |
+|   | [AI]: Analysis of leads I-III...                                        |                                   |
+|   |  - Detected sinus rhythm at 60 BPM.                                     |                                   |
+|   |  - No acute abnormalities.                                              |                                   |
+|   |  - Suggest: Normal ECG for age.                                         |                                   |
+|   |                                                                         |                                   |
+|   | [Type your question or request here...]  [Send]                         |                                   |
+|   +-------------------------------------------------------------------------+                                   |
++-----------------------------------------------------------------------------------------------------------------+
