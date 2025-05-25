@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { ChevronRight, User, Bluetooth, Search, Plug, Settings, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { PatientDialog } from "./PatientDialog";
 
 interface LeftSidebarProps {
   isExpanded: boolean;
@@ -37,6 +38,7 @@ export function LeftSidebar({
 }: LeftSidebarProps) {
   const [bufferSize, setBufferSize] = useState(250);
   const [websocketUrl, setWebsocketUrl] = useState("ws://localhost:5000/ws");
+  const [showPatientDialog, setShowPatientDialog] = useState(false);
 
   const { data: patients = [] } = useQuery({
     queryKey: ["/api/patients"],
@@ -129,7 +131,11 @@ export function LeftSidebar({
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button size="sm" variant="outline">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setShowPatientDialog(true)}
+                    >
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
@@ -266,6 +272,16 @@ export function LeftSidebar({
             )}
           </ScrollArea>
         </div>
+
+        {/* Patient Dialog */}
+        <PatientDialog
+          open={showPatientDialog}
+          onOpenChange={setShowPatientDialog}
+          onPatientCreated={(patient) => {
+            onPatientSelect(patient);
+            setShowPatientDialog(false);
+          }}
+        />
       </aside>
     </>
   );

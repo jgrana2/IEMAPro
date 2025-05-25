@@ -3,9 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Square } from "lucide-react";
-import { ECGCanvas } from "./ECGCanvas";
+import { Play, Pause, Square, FileText, Download } from "lucide-react";
+import { ECGCarousel } from "./ECGCarousel";
 import { useQuery } from "@tanstack/react-query";
+import { generateECGReport, downloadPDF } from "@/lib/pdf-generator";
+import { useToast } from "@/hooks/use-toast";
+import { generateSimulatedECGData, ECGData } from "@/lib/ecg-utils";
 
 interface MainContentProps {
   currentPatient: any;
@@ -43,6 +46,8 @@ export function MainContent({
 }: MainContentProps) {
   const [heartRate, setHeartRate] = useState(72);
   const [ecgData, setEcgData] = useState<{ [key: string]: number[] }>({});
+  const [ecgHistory, setEcgHistory] = useState<ECGData[]>([]);
+  const { toast } = useToast();
 
   const { data: systemLogs = [] } = useQuery({
     queryKey: ["/api/system-logs"],
@@ -61,10 +66,13 @@ export function MainContent({
     return () => clearInterval(interval);
   }, []);
 
-  // Generate mock ECG data for demonstration
+  // Generate ECG data and store history for reports
   useEffect(() => {
     const generateECGData = () => {
+      const timestamp = Date.now();
       const newData: { [key: string]: number[] } = {};
+      const leadsData: { [leadName: string]: number } = {};
+      
       ECG_LEADS.forEach((lead, index) => {
         const data = [];
         for (let i = 0; i < 500; i++) {
@@ -86,15 +94,66 @@ export function MainContent({
           data.push(value);
         }
         newData[lead.name] = data;
+        leadsData[lead.name] = generateSimulatedECGData(lead.name, timestamp);
       });
+      
       setEcgData(newData);
+      
+      // Store ECG data point for history
+      if (isRecording) {
+        const ecgDataPoint: ECGData = {
+          timestamp,
+          leads: leadsData,
+          heartRate,
+          quality: 'good'
+        };
+        setEcgHistory(prev => [...prev.slice(-999), ecgDataPoint]); // Keep last 1000 points
+      }
     };
 
     generateECGData();
     const interval = setInterval(generateECGData, 100); // Update every 100ms
 
     return () => clearInterval(interval);
-  }, []);
+  }, [heartRate, isRecording]);
+
+  const handleGeneratePDF = async () => {
+    if (!currentPatient) {
+      toast({
+        title: "No Patient Selected",
+        description: "Please select a patient before generating a PDF report.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const sessionInfo = {
+        sessionId: currentSession?.sessionId || `SESSION-${Date.now()}`,
+        startTime: new Date(),
+        endTime: new Date(),
+        duration: Math.floor(ecgHistory.length * 0.1), // Approximate duration in seconds
+        heartRate: heartRate
+      };
+
+      const pdfBlob = await generateECGReport(currentPatient, sessionInfo, ecgHistory);
+      const filename = `ECG_Report_${currentPatient.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+      
+      await downloadPDF(pdfBlob, filename);
+      
+      toast({
+        title: "PDF Generated",
+        description: `ECG report for ${currentPatient.name} has been downloaded.`,
+      });
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast({
+        title: "PDF Generation Failed",
+        description: "Failed to generate PDF report. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getLogLevelColor = (level: string) => {
     switch (level) {
@@ -151,28 +210,33 @@ export function MainContent({
           </div>
         </div>
 
-        {/* 12-Lead ECG Grid */}
+        {/* ECG Carousel */}
         <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {ECG_LEADS.map((lead, index) => (
-                <div key={lead.name} className="lead-card rounded-lg p-4 min-h-[140px] border">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-foreground">{lead.name}</h3>
-                    <span className="text-xs text-muted-foreground">{lead.voltage}</span>
-                  </div>
-                  <div className="h-20 bg-black rounded relative overflow-hidden">
-                    <ECGCanvas 
-                      leadName={lead.name}
-                      data={ecgData[lead.name] || []}
-                      isActive={bleStatus === 'connected'}
-                    />
-                    {/* Grid overlay */}
-                    <div className="absolute inset-0 ecg-grid-pattern pointer-events-none" />
-                  </div>
-                </div>
-              ))}
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">12-Lead ECG Display</CardTitle>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGeneratePDF}
+                  disabled={!currentPatient || !isRecording}
+                  className="flex items-center space-x-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span className="hidden sm:inline">Generate PDF Report</span>
+                </Button>
+              </div>
             </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <ECGCarousel 
+              leads={ECG_LEADS.map(lead => ({
+                ...lead,
+                data: ecgData[lead.name] || []
+              }))}
+              isActive={bleStatus === 'connected'}
+            />
           </CardContent>
         </Card>
       </div>
