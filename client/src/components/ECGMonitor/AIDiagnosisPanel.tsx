@@ -7,8 +7,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Send, Bot, User, Activity, Heart, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 
 interface ChatMessage {
   id: string;
@@ -44,22 +42,42 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
   const [inputValue, setInputValue] = useState("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const analyzeMutation = useMutation({
-    mutationFn: async (data: { message: string; ecgData?: any[] }) => {
-      const response = await apiRequest("POST", "/api/ai-diagnosis", data);
-      return await response.json();
-    },
-    onSuccess: (response: any) => {
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const analyzeWithAI = async (data: { message: string; ecgData?: any[] }) => {
+    setIsAnalyzing(true);
+    try {
+      const response = await fetch("/api/ai-diagnosis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to analyze");
+      }
+      
+      const result = await response.json();
       const assistantMessage: ChatMessage = {
         id: Date.now().toString(),
         role: "assistant",
-        content: response.message,
+        content: result.message,
         timestamp: new Date(),
-        analysis: response.analysis,
+        analysis: result.analysis,
       };
       setMessages(prev => [...prev, assistantMessage]);
-    },
-  });
+    } catch (error) {
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: "Sorry, I encountered an error while analyzing the ECG data. Please try again.",
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
@@ -74,7 +92,7 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
     setMessages(prev => [...prev, userMessage]);
     
     // Send to AI for analysis
-    analyzeMutation.mutate({
+    analyzeWithAI({
       message: inputValue,
       ecgData: ecgData.length > 0 ? ecgData.slice(-100) : undefined, // Send last 100 data points
     });
@@ -110,7 +128,7 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
 
     setMessages(prev => [...prev, userMessage]);
     
-    analyzeMutation.mutate({
+    analyzeWithAI({
       message: "Analyze the current ECG data for abnormalities, rhythm, and provide diagnostic insights",
       ecgData: ecgData.slice(-250), // Send last 250 data points for analysis
     });
@@ -141,7 +159,7 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
               size="sm"
               variant="outline"
               onClick={analyzeCurrentECG}
-              disabled={analyzeMutation.isPending || ecgData.length === 0}
+              disabled={isAnalyzing || ecgData.length === 0}
             >
               <Heart className="h-4 w-4 mr-1" />
               Analyze Current ECG
@@ -250,7 +268,7 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
                 </div>
               ))}
               
-              {analyzeMutation.isPending && (
+              {isAnalyzing && (
                 <div className="flex gap-3">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="bg-blue-100 text-blue-600">
@@ -277,11 +295,11 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
                 onKeyPress={handleKeyPress}
                 placeholder="Ask about the ECG data, request analysis, or describe symptoms..."
                 className="flex-1"
-                disabled={analyzeMutation.isPending}
+                disabled={isAnalyzing}
               />
               <Button
                 onClick={handleSendMessage}
-                disabled={!inputValue.trim() || analyzeMutation.isPending}
+                disabled={!inputValue.trim() || isAnalyzing}
                 size="icon"
               >
                 <Send className="h-4 w-4" />
@@ -292,7 +310,7 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
                 variant="outline"
                 size="sm"
                 onClick={() => setInputValue("Please analyze the last 10 seconds of ECG data")}
-                disabled={analyzeMutation.isPending}
+                disabled={isAnalyzing}
               >
                 Analyze Last 10s
               </Button>
@@ -300,7 +318,7 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
                 variant="outline"
                 size="sm"
                 onClick={() => setInputValue("What abnormalities do you detect?")}
-                disabled={analyzeMutation.isPending}
+                disabled={isAnalyzing}
               >
                 Check Abnormalities
               </Button>
@@ -308,7 +326,7 @@ export function AIDiagnosisPanel({ currentPatient, isRecording, ecgData = [] }: 
                 variant="outline"
                 size="sm"
                 onClick={() => setInputValue("Provide diagnostic recommendations")}
-                disabled={analyzeMutation.isPending}
+                disabled={isAnalyzing}
               >
                 Get Recommendations
               </Button>

@@ -3,6 +3,7 @@ import { Header } from "@/components/ECGMonitor/Header";
 import { LeftSidebar } from "@/components/ECGMonitor/LeftSidebar";
 import { RightSidebar } from "@/components/ECGMonitor/RightSidebar";
 import { MainContent } from "@/components/ECGMonitor/MainContent";
+import { AIDiagnosisPanel } from "@/components/ECGMonitor/AIDiagnosisPanel";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useBluetooth } from "@/hooks/useBluetooth";
@@ -15,6 +16,7 @@ export default function ECGMonitor() {
   const [currentPatient, setCurrentPatient] = useState<any>(null);
   const [currentSession, setCurrentSession] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [ecgData, setEcgData] = useState<any[]>([]);
 
   // Main content margin classes based on sidebar states
   const getMainContentClass = () => {
@@ -58,16 +60,27 @@ export default function ECGMonitor() {
           wsStatus={wsStatus}
         />
         
-        <div className={`flex-1 sidebar-transition ${getMainContentClass()}`}>
-          <MainContent
-            currentPatient={currentPatient}
-            currentSession={currentSession}
-            isRecording={isRecording}
-            onStartRecording={() => setIsRecording(true)}
-            onStopRecording={() => setIsRecording(false)}
-            bleStatus={bleStatus}
-            wsStatus={wsStatus}
-          />
+        <div className={`flex-1 sidebar-transition ${getMainContentClass()} flex flex-col`}>
+          <div className="flex-1 min-h-0">
+            <MainContent
+              currentPatient={currentPatient}
+              currentSession={currentSession}
+              isRecording={isRecording}
+              onStartRecording={() => setIsRecording(true)}
+              onStopRecording={() => setIsRecording(false)}
+              bleStatus={bleStatus}
+              wsStatus={wsStatus}
+            />
+          </div>
+          
+          {/* AI Diagnosis Panel at bottom */}
+          <div className="h-[450px] border-t bg-background p-4">
+            <AIDiagnosisPanel
+              currentPatient={currentPatient}
+              isRecording={isRecording}
+              ecgData={ecgData}
+            />
+          </div>
         </div>
       </div>
 
