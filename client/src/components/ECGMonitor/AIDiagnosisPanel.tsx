@@ -300,7 +300,7 @@ export function AIDiagnosisPanel({
                       </div>
                     )}
 
-                    <div className="text-xs text-muted-foreground mt-1 sm:mt-2">
+                    <div className="text-xs font-extralight mt-1 sm:mt-2">
                       {message.timestamp.toLocaleTimeString()}
                     </div>
                   </div>
