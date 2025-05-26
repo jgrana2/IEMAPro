@@ -7,6 +7,7 @@ import { AIDiagnosisPanel } from "@/components/ECGMonitor/AIDiagnosisPanel";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useBluetooth } from "@/hooks/useBluetooth";
+import { Bot } from "lucide-react";
 
 export default function ECGMonitor() {
   const { leftExpanded, rightExpanded, toggleLeft, toggleRight } =
@@ -30,14 +31,16 @@ export default function ECGMonitor() {
 
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging) return;
-    
-    const rect = document.querySelector('.main-content-container')?.getBoundingClientRect();
+
+    const rect = document
+      .querySelector(".main-content-container")
+      ?.getBoundingClientRect();
     if (!rect) return;
-    
+
     const newHeight = rect.bottom - e.clientY;
     const minHeight = 200;
     const maxHeight = window.innerHeight * 0.6;
-    
+
     setAiPanelHeight(Math.max(minHeight, Math.min(maxHeight, newHeight)));
   };
 
@@ -47,11 +50,11 @@ export default function ECGMonitor() {
 
   useEffect(() => {
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
       };
     }
   }, [isDragging]);
@@ -115,19 +118,19 @@ export default function ECGMonitor() {
 
           {/* AI Diagnosis Panel at bottom - Collapsible & Draggable */}
           <div
-            className={`border-t bg-background flex-shrink-0 relative ${
+            className={`border-t bg-background flex-shrink-0 relative min-h-0${
               aiPanelExpanded ? "overflow-hidden" : "h-12"
             } ${!isDragging ? "transition-all duration-300" : ""}`}
-            style={{ 
-              height: aiPanelExpanded ? `${aiPanelHeight}px` : "48px"
+            style={{
+              height: aiPanelExpanded ? `${aiPanelHeight}px` : "48px",
             }}
           >
             <div className="flex items-center justify-between p-2 border-b bg-background">
-              <h3 className="text-sm font-medium">AI-Assisted Diagnosis</h3>
               <div className="flex items-center gap-2">
-                {aiPanelExpanded && (
-                  <div className="text-xs text-gray-500 hidden sm:block">Drag handle to resize</div>
-                )}
+                <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
+                <h3 className="text-sm font-medium">AI-Assisted Diagnosis</h3>
+              </div>
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setAiPanelExpanded(!aiPanelExpanded)}
                   className="p-1 hover:bg-gray-100 rounded transition-colors"
@@ -146,7 +149,7 @@ export default function ECGMonitor() {
                   />
                 </div>
                 {/* Draggable handle */}
-                <div 
+                <div
                   className={`absolute top-0 left-0 right-0 h-1 bg-gray-200 hover:bg-blue-400 transition-colors cursor-row-resize border-t-2 border-gray-300 ${
                     isDragging ? "bg-blue-500" : ""
                   }`}

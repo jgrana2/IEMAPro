@@ -175,13 +175,13 @@ export function MainContent({
 
   return (
     <main className="h-fit flex flex-col bg-muted/20">
-      <div className="flex-1 p-6">
+      <div className="flex-1 py-2">
         {/* ECG Carousel with Combined Header */}
         <Card className="mb-0">
           <CardHeader className="pb-4">
             <div className="space-y-4">
               {/* Main Header Row */}
-              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+              <div className="flex flex-col lg:flex-row items-center justify-between gap-4 text-center sm:text-left">
                 <div className="flex-1">
                   <CardTitle className="text-lg mb-1">
                     12-Lead ECG Monitoring
@@ -194,7 +194,7 @@ export function MainContent({
                 </div>
 
                 {/* Controls Row */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-center gap-4">
                   {/* Heart Rate Display */}
                   <div className="text-center sm:text-right">
                     <p className="text-xs text-muted-foreground">Heart Rate</p>
@@ -256,7 +256,7 @@ export function MainContent({
       </div>
 
       {/* System Logs */}
-      <div className="border-t border-border bg-card">
+      <div className="border border-border bg-card">
         <div className="p-4">
           <h3 className="text-sm font-semibold text-foreground mb-3">
             System Messages

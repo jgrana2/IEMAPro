@@ -162,14 +162,15 @@ export function AIDiagnosisPanel({
 
   return (
     <div className="h-full flex flex-col bg-background">
-      <div className="border-b px-3 sm:px-6 py-3 flex-shrink-0">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <h3 className="flex items-center gap-2 text-sm sm:text-base font-medium">
-            <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
-            <span className="hidden sm:inline">AI-Assisted Diagnosis</span>
-            <span className="sm:hidden">AI Diagnosis</span>
-          </h3>
-          <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-row border-b px-3 sm:px-6 py-3 flex-shrink-0">
+        <div className="flex flex-row w-full sm:items-center justify-between gap-2">
+          <div className="flex items-center w-full justify-between gap-2 flex-wrap">
+            {currentPatient && (
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                Patient: {currentPatient.firstName} {currentPatient.lastName}{" "}
+                (ID: {currentPatient.patientId})
+              </p>
+            )}
             {isRecording && (
               <Badge
                 variant="outline"
@@ -192,12 +193,6 @@ export function AIDiagnosisPanel({
             </Button>
           </div>
         </div>
-        {currentPatient && (
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Patient: {currentPatient.firstName} {currentPatient.lastName} (ID:{" "}
-            {currentPatient.patientId})
-          </p>
-        )}
       </div>
       <div className="flex-1 min-h-0 flex flex-col">
         {/* Messages Area - Fixed height with scroll */}
@@ -337,7 +332,7 @@ export function AIDiagnosisPanel({
         </div>
 
         {/* Input Area - Pinned to bottom */}
-        <div className="border-t p-2 sm:p-4 flex-shrink-0">
+        <div className="p-2 flex-shrink-0 min-h">
           <div className="flex gap-2">
             <Input
               value={inputValue}
