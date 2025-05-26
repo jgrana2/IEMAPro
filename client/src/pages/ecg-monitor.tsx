@@ -79,7 +79,7 @@ export default function ECGMonitor() {
 
           {/* AI Diagnosis Panel at bottom - Collapsible & Draggable */}
           <div
-            className={`border-t bg-background flex-shrink-0 transition-all duration-300 ${
+            className={`border-t bg-background flex-shrink-0 transition-all duration-300 relative ${
               aiPanelExpanded ? "h-[400px] resize-y overflow-hidden" : "h-12"
             }`}
             style={{ 
@@ -89,21 +89,33 @@ export default function ECGMonitor() {
           >
             <div className="flex items-center justify-between p-2 border-b bg-background">
               <h3 className="text-sm font-medium">AI-Assisted Diagnosis</h3>
-              <button
-                onClick={() => setAiPanelExpanded(!aiPanelExpanded)}
-                className="p-1 hover:bg-gray-100 rounded transition-colors"
-              >
-                {aiPanelExpanded ? "−" : "+"}
-              </button>
+              <div className="flex items-center gap-2">
+                {aiPanelExpanded && (
+                  <div className="text-xs text-gray-500 hidden sm:block">Drag corner to resize</div>
+                )}
+                <button
+                  onClick={() => setAiPanelExpanded(!aiPanelExpanded)}
+                  className="p-1 hover:bg-gray-100 rounded transition-colors"
+                >
+                  {aiPanelExpanded ? "−" : "+"}
+                </button>
+              </div>
             </div>
             {aiPanelExpanded && (
-              <div className="h-[calc(100%-48px)]">
-                <AIDiagnosisPanel
-                  currentPatient={currentPatient}
-                  isRecording={isRecording}
-                  ecgData={ecgData}
-                />
-              </div>
+              <>
+                <div className="h-[calc(100%-48px)]">
+                  <AIDiagnosisPanel
+                    currentPatient={currentPatient}
+                    isRecording={isRecording}
+                    ecgData={ecgData}
+                  />
+                </div>
+                {/* Visible drag handle */}
+                <div className="absolute bottom-0 right-0 w-4 h-4 bg-gray-300 hover:bg-gray-400 transition-colors cursor-nw-resize">
+                  <div className="absolute bottom-1 right-1 w-0 h-0 border-l-2 border-b-2 border-gray-600"></div>
+                  <div className="absolute bottom-0.5 right-0.5 w-0 h-0 border-l-1 border-b-1 border-gray-600"></div>
+                </div>
+              </>
             )}
           </div>
         </div>
