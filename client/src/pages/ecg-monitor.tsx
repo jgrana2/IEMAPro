@@ -115,9 +115,9 @@ export default function ECGMonitor() {
 
           {/* AI Diagnosis Panel at bottom - Collapsible & Draggable */}
           <div
-            className={`border-t bg-background flex-shrink-0 transition-all duration-300 relative ${
+            className={`border-t bg-background flex-shrink-0 relative ${
               aiPanelExpanded ? "overflow-hidden" : "h-12"
-            }`}
+            } ${!isDragging ? "transition-all duration-300" : ""}`}
             style={{ 
               height: aiPanelExpanded ? `${aiPanelHeight}px` : "48px"
             }}
