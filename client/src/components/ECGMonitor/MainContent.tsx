@@ -176,65 +176,64 @@ export function MainContent({
   return (
     <main className="h-full flex flex-col bg-muted/20">
       <div className="flex-1 p-6">
-        {/* ECG Header */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between">
-            <div className="text-center sm:text-left">
-              <h2 className="text-lg font-semibold text-foreground">
-                12-Lead ECG Monitoring
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {currentPatient
-                  ? `Patient: ${currentPatient.name} (ID: ${currentPatient.patientId})`
-                  : "No patient selected"}
-              </p>
-            </div>
-
-            <div className="text-right">
-              <p className="text-xs text-muted-foreground">Heart Rate</p>
-              <p className="text-2xl font-bold text-red-500">{heartRate} BPM</p>
-            </div>
-            <div className="flex">
-              {!isRecording ? (
-                <Button
-                  onClick={onStartRecording}
-                  className="bg-green-600 hover:bg-green-700"
-                  disabled={!currentPatient || bleStatus !== "connected"}
-                >
-                  <Play className="h-4 w-4 mr-2" />
-                  Start Recording
-                </Button>
-              ) : (
-                <Button onClick={onStopRecording} variant="destructive">
-                  <Square className="h-4 w-4 mr-2" />
-                  Stop Recording
-                </Button>
-              )}
-              {isRecording && (
-                <Badge variant="destructive" className="animate-pulse">
-                  Recording
-                </Badge>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ECG Carousel */}
+        {/* ECG Carousel with Combined Header */}
         <Card className="mb-6">
           <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">12-Lead ECG Display</CardTitle>
-              <div className="flex space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGeneratePDF}
-                  disabled={!currentPatient}
-                  className="flex items-center space-x-2"
-                >
-                  <FileText className="h-4 w-4" />
-                  <span className="hidden sm:inline">Generate PDF Report</span>
-                </Button>
+            <div className="space-y-4">
+              {/* Main Header Row */}
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                <div className="flex-1">
+                  <CardTitle className="text-lg mb-1">12-Lead ECG Monitoring</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {currentPatient
+                      ? `Patient: ${currentPatient.name} (ID: ${currentPatient.patientId})`
+                      : "No patient selected"}
+                  </p>
+                </div>
+                
+                {/* Controls Row */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  {/* Heart Rate Display */}
+                  <div className="text-center sm:text-right">
+                    <p className="text-xs text-muted-foreground">Heart Rate</p>
+                    <p className="text-2xl font-bold text-red-500">{heartRate} BPM</p>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {!isRecording ? (
+                      <Button
+                        onClick={onStartRecording}
+                        className="bg-green-600 hover:bg-green-700"
+                        disabled={!currentPatient || bleStatus !== "connected"}
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        Start Recording
+                      </Button>
+                    ) : (
+                      <>
+                        <Button onClick={onStopRecording} variant="destructive">
+                          <Square className="h-4 w-4 mr-2" />
+                          Stop Recording
+                        </Button>
+                        <Badge variant="destructive" className="animate-pulse">
+                          Recording
+                        </Badge>
+                      </>
+                    )}
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGeneratePDF}
+                      disabled={!currentPatient}
+                      className="flex items-center space-x-2"
+                    >
+                      <FileText className="h-4 w-4" />
+                      <span className="hidden sm:inline">Generate PDF Report</span>
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </CardHeader>
