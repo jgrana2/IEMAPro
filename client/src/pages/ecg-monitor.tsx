@@ -19,6 +19,42 @@ export default function ECGMonitor() {
   const [isRecording, setIsRecording] = useState(false);
   const [ecgData, setEcgData] = useState<any[]>([]);
   const [aiPanelExpanded, setAiPanelExpanded] = useState(true);
+  const [aiPanelHeight, setAiPanelHeight] = useState(400);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Handle dragging for AI panel resize
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return;
+    
+    const rect = document.querySelector('.main-content-container')?.getBoundingClientRect();
+    if (!rect) return;
+    
+    const newHeight = rect.bottom - e.clientY;
+    const minHeight = 200;
+    const maxHeight = window.innerHeight * 0.6;
+    
+    setAiPanelHeight(Math.max(minHeight, Math.min(maxHeight, newHeight)));
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging]);
 
   // Main content margin classes based on sidebar states
   const getMainContentClass = () => {
@@ -63,7 +99,7 @@ export default function ECGMonitor() {
         />
 
         <div
-          className={`flex-1 sidebar-transition ${getMainContentClass()} flex flex-col overflow-hidden`}
+          className={`flex-1 sidebar-transition ${getMainContentClass()} flex flex-col overflow-hidden main-content-container`}
         >
           <div className="flex-1 min-h-0 overflow-auto">
             <MainContent
@@ -80,18 +116,17 @@ export default function ECGMonitor() {
           {/* AI Diagnosis Panel at bottom - Collapsible & Draggable */}
           <div
             className={`border-t bg-background flex-shrink-0 transition-all duration-300 relative ${
-              aiPanelExpanded ? "h-[400px] resize-y overflow-hidden" : "h-12"
+              aiPanelExpanded ? "overflow-hidden" : "h-12"
             }`}
             style={{ 
-              minHeight: aiPanelExpanded ? "200px" : "48px",
-              maxHeight: "60vh"
+              height: aiPanelExpanded ? `${aiPanelHeight}px` : "48px"
             }}
           >
             <div className="flex items-center justify-between p-2 border-b bg-background">
               <h3 className="text-sm font-medium">AI-Assisted Diagnosis</h3>
               <div className="flex items-center gap-2">
                 {aiPanelExpanded && (
-                  <div className="text-xs text-gray-500 hidden sm:block">Drag corner to resize</div>
+                  <div className="text-xs text-gray-500 hidden sm:block">Drag handle to resize</div>
                 )}
                 <button
                   onClick={() => setAiPanelExpanded(!aiPanelExpanded)}
@@ -110,11 +145,14 @@ export default function ECGMonitor() {
                     ecgData={ecgData}
                   />
                 </div>
-                {/* Visible drag handle */}
-                <div className="absolute bottom-0 right-0 w-4 h-4 bg-gray-300 hover:bg-gray-400 transition-colors cursor-nw-resize">
-                  <div className="absolute bottom-1 right-1 w-0 h-0 border-l-2 border-b-2 border-gray-600"></div>
-                  <div className="absolute bottom-0.5 right-0.5 w-0 h-0 border-l-1 border-b-1 border-gray-600"></div>
-                </div>
+                {/* Draggable handle */}
+                <div 
+                  className={`absolute top-0 left-0 right-0 h-1 bg-gray-200 hover:bg-blue-400 transition-colors cursor-row-resize border-t-2 border-gray-300 ${
+                    isDragging ? "bg-blue-500" : ""
+                  }`}
+                  onMouseDown={handleMouseDown}
+                  title="Drag to resize panel"
+                />
               </>
             )}
           </div>
