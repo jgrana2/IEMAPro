@@ -93,7 +93,7 @@ export default function ECGMonitor() {
               </button>
             </div>
             {aiPanelExpanded && (
-              <div className="p-4 h-[calc(100%-3rem)]">
+              <div className="p-4 h-fit">
                 <AIDiagnosisPanel
                   currentPatient={currentPatient}
                   isRecording={isRecording}

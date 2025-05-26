@@ -174,31 +174,35 @@ export function MainContent({
   };
 
   return (
-    <main className="h-full flex flex-col bg-muted/20">
+    <main className="h-fit flex flex-col bg-muted/20">
       <div className="flex-1 p-6">
         {/* ECG Carousel with Combined Header */}
-        <Card className="mb-6">
+        <Card className="mb-0">
           <CardHeader className="pb-4">
             <div className="space-y-4">
               {/* Main Header Row */}
               <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
                 <div className="flex-1">
-                  <CardTitle className="text-lg mb-1">12-Lead ECG Monitoring</CardTitle>
+                  <CardTitle className="text-lg mb-1">
+                    12-Lead ECG Monitoring
+                  </CardTitle>
                   <p className="text-sm text-muted-foreground">
                     {currentPatient
                       ? `Patient: ${currentPatient.name} (ID: ${currentPatient.patientId})`
                       : "No patient selected"}
                   </p>
                 </div>
-                
+
                 {/* Controls Row */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   {/* Heart Rate Display */}
                   <div className="text-center sm:text-right">
                     <p className="text-xs text-muted-foreground">Heart Rate</p>
-                    <p className="text-2xl font-bold text-red-500">{heartRate} BPM</p>
+                    <p className="text-2xl font-bold text-red-500">
+                      {heartRate} BPM
+                    </p>
                   </div>
-                  
+
                   {/* Action Buttons */}
                   <div className="flex items-center gap-2 flex-wrap">
                     {!isRecording ? (
@@ -221,7 +225,7 @@ export function MainContent({
                         </Badge>
                       </>
                     )}
-                    
+
                     <Button
                       variant="outline"
                       size="sm"
@@ -230,7 +234,9 @@ export function MainContent({
                       className="flex items-center space-x-2"
                     >
                       <FileText className="h-4 w-4" />
-                      <span className="hidden sm:inline">Generate PDF Report</span>
+                      <span className="hidden sm:inline">
+                        Generate PDF Report
+                      </span>
                     </Button>
                   </div>
                 </div>
