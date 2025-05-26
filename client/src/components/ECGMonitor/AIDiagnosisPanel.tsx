@@ -161,14 +161,14 @@ export function AIDiagnosisPanel({
   }, [messages]);
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3 px-3 sm:px-6">
+    <div className="h-full flex flex-col bg-background">
+      <div className="border-b px-3 sm:px-6 py-3 flex-shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+          <h3 className="flex items-center gap-2 text-sm sm:text-base font-medium">
             <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
             <span className="hidden sm:inline">AI-Assisted Diagnosis</span>
             <span className="sm:hidden">AI Diagnosis</span>
-          </CardTitle>
+          </h3>
           <div className="flex items-center gap-2 flex-wrap">
             {isRecording && (
               <Badge
@@ -198,8 +198,8 @@ export function AIDiagnosisPanel({
             {currentPatient.patientId})
           </p>
         )}
-      </CardHeader>
-      <CardContent className="p-0 flex flex-col">
+      </div>
+      <div className="flex-1 min-h-0 flex flex-col">
         {/* Messages Area - Fixed height with scroll */}
         <div className="flex-1 min-h-0">
           <ScrollArea className="h-full px-2 sm:px-4" ref={scrollAreaRef}>
@@ -393,7 +393,7 @@ export function AIDiagnosisPanel({
             </Button>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
