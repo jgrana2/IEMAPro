@@ -75,7 +75,7 @@ export function parseADS1298Data(rawData: number[]): ParsedECGData {
   // Based on device code: each sample has 27 bytes (3 status + 8 channels * 3 bytes each)
   // But we might be receiving partial data or simplified format, so try multiple approaches
   
-  const bytesPerFullSample = 27; // Full ADS1298 sample format
+  const bytesPerFullSample = 28; // Full ADS1298 sample format
   const bytesPerChannelPair = 6; // Simplified 2-channel format
   
   // Try full 8-channel format first
