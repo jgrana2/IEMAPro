@@ -56,8 +56,8 @@ function adcToVoltage(adcValue: number, gain: number = 1): number {
 
 /**
  * Parse ADS1298 ECG data packet
- * Maps device channels directly: Channel 1 (8171) = Lead I, Channel 2 (8172) = Lead II
- * 84 bytes = 28 samples of 3 bytes each, alternating between channels
+ * Maps device channels directly: Channel 1 (8171) = Lead I
+ * 84 bytes = 28 samples of 3 bytes each from single channel
  */
 export function parseADS1298Data(rawData: number[]): ParsedECGData {
   if (rawData.length !== 84) {
@@ -66,10 +66,8 @@ export function parseADS1298Data(rawData: number[]): ParsedECGData {
 
   const samples: ADS1298Sample[] = [];
   const leadIData: number[] = [];
-  const leadIIData: number[] = [];
   
-  // Parse 84 bytes as 28 samples of 3 bytes each
-  // Assume alternating between Lead I (channel 8171) and Lead II (channel 8172)
+  // Parse 84 bytes as 28 samples of 3 bytes each from Lead I (channel 8171)
   for (let i = 0; i < 28; i++) {
     const byteIndex = i * 3;
     if (byteIndex + 2 < rawData.length) {
@@ -80,36 +78,23 @@ export function parseADS1298Data(rawData: number[]): ParsedECGData {
       const adcValue = parse24BitSigned(byte1, byte2, byte3);
       const voltage = adcToVoltage(adcValue, 6); // ECG gain
       
-      // Alternate between Lead I and Lead II
-      if (i % 2 === 0) {
-        leadIData.push(voltage); // Even indices = Lead I (channel 8171)
-      } else {
-        leadIIData.push(voltage); // Odd indices = Lead II (channel 8172)
-      }
+      leadIData.push(voltage); // All samples are Lead I (channel 8171)
     }
   }
   
-  // Create samples by pairing Lead I and Lead II data
-  const sampleCount = Math.min(leadIData.length, leadIIData.length);
-  
-  for (let i = 0; i < sampleCount; i++) {
+  // Create samples with Lead I data only
+  // Note: Without Lead II, we cannot calculate derived leads accurately
+  for (let i = 0; i < leadIData.length; i++) {
     const leadI = leadIData[i];
-    const leadII = leadIIData[i];
-    const leadIII = leadII - leadI; // Standard ECG calculation
-    
-    // Calculate augmented leads
-    const aVR = -(leadI + leadII) / 2;
-    const aVL = leadI - leadII / 2;
-    const aVF = leadII - leadI / 2;
     
     const sample: ADS1298Sample = {
       leadI,
-      leadII,
-      leadIII,
-      aVR,
-      aVL,
-      aVF,
-      V1: 0, // Chest leads not available from your 2-channel device
+      leadII: 0, // Not available from single channel
+      leadIII: 0, // Cannot calculate without Lead II
+      aVR: -leadI / 2, // Approximate calculation
+      aVL: leadI / 2, // Approximate calculation
+      aVF: 0, // Cannot calculate without Lead II
+      V1: 0, // Chest leads not available
       V2: 0,
       V3: 0,
       V4: 0,
@@ -120,10 +105,10 @@ export function parseADS1298Data(rawData: number[]): ParsedECGData {
     samples.push(sample);
   }
 
-  // Assess signal quality based on Lead II (primary lead)
+  // Assess signal quality based on Lead I
   const quality = assessSignalQuality(samples);
 
-  console.log(`Parsed ${samples.length} ECG samples from channels 8171/8172, quality: ${quality}`);
+  console.log(`Parsed ${samples.length} ECG samples from channel 8171 (Lead I), quality: ${quality}`);
 
   return {
     samples,
@@ -139,15 +124,15 @@ export function parseADS1298Data(rawData: number[]): ParsedECGData {
 function assessSignalQuality(samples: ADS1298Sample[]): 'good' | 'poor' | 'noise' {
   if (samples.length === 0) return 'poor';
   
-  // Calculate signal variance for Lead II (most reliable)
-  const leadIIValues = samples.map(s => s.leadII);
-  const mean = leadIIValues.reduce((a, b) => a + b, 0) / leadIIValues.length;
-  const variance = leadIIValues.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / leadIIValues.length;
+  // Calculate signal variance for Lead I (only available lead)
+  const leadIValues = samples.map(s => s.leadI);
+  const mean = leadIValues.reduce((a, b) => a + b, 0) / leadIValues.length;
+  const variance = leadIValues.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / leadIValues.length;
   const stdDev = Math.sqrt(variance);
   
   // Check for reasonable ECG amplitude (0.1 - 5 mV typical)
-  const maxAmplitude = Math.max(...leadIIValues.map(Math.abs));
-  const minAmplitude = Math.min(...leadIIValues.map(Math.abs));
+  const maxAmplitude = Math.max(...leadIValues.map(Math.abs));
+  const minAmplitude = Math.min(...leadIValues.map(Math.abs));
   
   if (maxAmplitude > 10 || stdDev > 5) {
     return 'noise'; // Too much noise or artifact
@@ -194,17 +179,17 @@ export function convertToECGFormat(parsedData: ParsedECGData): { [leadName: stri
 export function calculateHeartRateFromSamples(samples: ADS1298Sample[], sampleRate: number = 500): number {
   if (samples.length < sampleRate) return 0; // Need at least 1 second of data
   
-  // Use Lead II for heart rate calculation
-  const leadII = samples.map(s => s.leadII);
+  // Use Lead I for heart rate calculation (only available lead)
+  const leadI = samples.map(s => s.leadI);
   
   // Simple peak detection for R-waves
   const peaks: number[] = [];
-  const threshold = Math.max(...leadII) * 0.6; // 60% of max amplitude
+  const threshold = Math.max(...leadI) * 0.6; // 60% of max amplitude
   
-  for (let i = 1; i < leadII.length - 1; i++) {
-    if (leadII[i] > threshold && 
-        leadII[i] > leadII[i - 1] && 
-        leadII[i] > leadII[i + 1]) {
+  for (let i = 1; i < leadI.length - 1; i++) {
+    if (leadI[i] > threshold && 
+        leadI[i] > leadI[i - 1] && 
+        leadI[i] > leadI[i + 1]) {
       // Ensure peaks are at least 200ms apart (300 BPM max)
       if (peaks.length === 0 || i - peaks[peaks.length - 1] > sampleRate * 0.2) {
         peaks.push(i);
