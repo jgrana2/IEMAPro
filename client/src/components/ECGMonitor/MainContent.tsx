@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { generateECGReport, downloadPDF } from "@/lib/pdf-generator";
 import { useToast } from "@/hooks/use-toast";
 import { generateSimulatedECGData, ECGData } from "@/lib/ecg-utils";
+import { useWebSocket } from "@/hooks/useWebSocket";
 
 interface MainContentProps {
   currentPatient: any;
@@ -44,10 +45,11 @@ export function MainContent({
   bleStatus,
   wsStatus,
 }: MainContentProps) {
-  const [heartRate, setHeartRate] = useState(72);
-  const [ecgData, setEcgData] = useState<{ [key: string]: number[] }>({});
   const [ecgHistory, setEcgHistory] = useState<ECGData[]>([]);
   const { toast } = useToast();
+  
+  // Use WebSocket hook to get real ADS1298 ECG data
+  const { ecgData, heartRate, signalQuality, sendADS1298Data } = useWebSocket();
 
   const { data: systemLogs = [] } = useQuery({
     queryKey: ["/api/system-logs"],

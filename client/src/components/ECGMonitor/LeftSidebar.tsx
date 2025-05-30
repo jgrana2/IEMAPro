@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { PatientDialog } from "./PatientDialog";
+import { ADS1298TestPanel } from "./ADS1298TestPanel";
 
 interface LeftSidebarProps {
   isExpanded: boolean;

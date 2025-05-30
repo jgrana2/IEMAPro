@@ -4,6 +4,7 @@ import { LeftSidebar } from "@/components/ECGMonitor/LeftSidebar";
 import { RightSidebar } from "@/components/ECGMonitor/RightSidebar";
 import { MainContent } from "@/components/ECGMonitor/MainContent";
 import { AIDiagnosisPanel } from "@/components/ECGMonitor/AIDiagnosisPanel";
+import { ADS1298TestPanel } from "@/components/ECGMonitor/ADS1298TestPanel";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useBluetooth } from "@/hooks/useBluetooth";
