@@ -239,7 +239,8 @@ export function useBluetooth() {
         setConnectedDevice({ 
           id: bluetoothDevice.id, 
           name: bluetoothDevice.name || "IoT Holter",
-          isConnected: true 
+          isConnected: true,
+          bluetoothDevice: bluetoothDevice  // Store the actual Bluetooth device object
         });
 
         // Invalidate cache to refresh device list
@@ -266,48 +267,83 @@ export function useBluetooth() {
   );
 
   const disconnectDevice = useCallback(async () => {
-    if (connectedDevice && connectedDevice.bluetoothDevice) {
-      try {
-        // Remove event listeners
-        connectedDevice.bluetoothDevice.removeEventListener('gattserverdisconnected', handleDeviceDisconnection);
-        
-        // Disconnect from GATT server if connected
-        if (connectedDevice.bluetoothDevice.gatt?.connected) {
-          connectedDevice.bluetoothDevice.gatt.disconnect();
-        }
+    if (!connectedDevice) {
+      toast({
+        title: "No Device Connected",
+        description: "There is no device currently connected to disconnect.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-        // Update backend
+    try {
+      console.log("Attempting to disconnect device:", connectedDevice.name);
+      
+      // If we have the actual Bluetooth device object, properly disconnect it
+      if (connectedDevice.bluetoothDevice) {
+        try {
+          // Remove event listeners first to prevent duplicate disconnection events
+          connectedDevice.bluetoothDevice.removeEventListener('gattserverdisconnected', handleDeviceDisconnection);
+          
+          // Check if GATT server is still connected and disconnect it
+          if (connectedDevice.bluetoothDevice.gatt?.connected) {
+            console.log("Disconnecting GATT server...");
+            await connectedDevice.bluetoothDevice.gatt.disconnect();
+            console.log("GATT server disconnected successfully");
+          } else {
+            console.log("GATT server was already disconnected");
+          }
+        } catch (gattError) {
+          console.warn("Error disconnecting GATT server:", gattError);
+          // Continue with cleanup even if GATT disconnect fails
+        }
+      } else {
+        console.warn("No Bluetooth device object available, proceeding with state cleanup");
+      }
+
+      // Update backend status
+      try {
         await apiRequest(
           "PATCH",
           `/api/ble-devices/device/${connectedDevice.id}`,
           { isConnected: false }
         );
-
-        // Update local state
-        setDevices((prev) =>
-          prev.map((d) =>
-            d.id === connectedDevice.id ? { ...d, isConnected: false } : d,
-          ),
-        );
-
-        setConnectedDevice(null);
-        setBleStatus("disconnected");
-
-        // Invalidate cache to refresh device list
-        queryClient.invalidateQueries({ queryKey: ["/api/ble-devices"] });
-
-        toast({
-          title: "Device Disconnected",
-          description: "Bluetooth device has been manually disconnected.",
-        });
-      } catch (error) {
-        console.error("Error during manual disconnection:", error);
-        toast({
-          title: "Disconnection Error",
-          description: "There was an issue disconnecting the device.",
-          variant: "destructive",
-        });
+        console.log("Backend updated successfully");
+      } catch (backendError) {
+        console.warn("Failed to update backend:", backendError);
+        // Continue with local cleanup even if backend update fails
       }
+
+      // Update local state
+      setDevices((prev) =>
+        prev.map((d) =>
+          d.id === connectedDevice.id ? { ...d, isConnected: false } : d,
+        ),
+      );
+
+      setConnectedDevice(null);
+      setBleStatus("disconnected");
+
+      // Invalidate cache to refresh device list
+      queryClient.invalidateQueries({ queryKey: ["/api/ble-devices"] });
+
+      toast({
+        title: "Device Disconnected",
+        description: "Bluetooth device has been successfully disconnected.",
+      });
+
+    } catch (error) {
+      console.error("Error during manual disconnection:", error);
+      
+      // Force cleanup of local state even if there were errors
+      setConnectedDevice(null);
+      setBleStatus("disconnected");
+      
+      toast({
+        title: "Disconnection Error",
+        description: "There was an issue disconnecting the device, but local state has been cleared.",
+        variant: "destructive",
+      });
     }
   }, [connectedDevice, toast, queryClient, handleDeviceDisconnection]);
 

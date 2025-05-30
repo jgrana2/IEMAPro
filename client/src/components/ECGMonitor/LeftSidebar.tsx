@@ -57,7 +57,7 @@ export function LeftSidebar({
   const [websocketUrl, setWebsocketUrl] = useState("wss://hrzmed.org");
   const [showPatientDialog, setShowPatientDialog] = useState(false);
 
-  const { data: patients = [] } = useQuery({
+  const { data: patients = [] } = useQuery<any[]>({
     queryKey: ["/api/patients"],
   });
 
