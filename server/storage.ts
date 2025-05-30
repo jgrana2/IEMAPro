@@ -72,11 +72,11 @@ export class MemStorage implements IStorage {
     // Default BLE device
     const defaultDevice: BleDevice = {
       id: this.currentBleDeviceId++,
-      deviceId: "ECG-12L-001",
-      name: "ECG Pro 12-Lead Monitor",
-      isConnected: true,
+      deviceId: "IoT-Holter-001",
+      name: "IoT Holter",
+      isConnected: false,
       lastSeen: new Date(),
-      rssi: -45,
+      rssi: -55,
     };
     this.bleDevices.set(defaultDevice.id, defaultDevice);
   }

@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface BluetoothDevice {
   id: string;
@@ -86,8 +87,15 @@ export function useBluetooth() {
           throw new Error("Device not found");
         }
 
+        // Update device connection status in backend
+        await apiRequest({
+          method: "PATCH",
+          endpoint: `/api/ble-devices/IoT-Holter-001`,
+          body: { isConnected: true }
+        });
+
         // Simulate connection process
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
         setDevices((prev) =>
           prev.map((d) =>
@@ -99,6 +107,9 @@ export function useBluetooth() {
 
         setConnectedDevice({ ...device, isConnected: true });
         setBleStatus("connected");
+
+        // Invalidate cache to refresh device list
+        queryClient.invalidateQueries({ queryKey: ["/api/ble-devices"] });
 
         toast({
           title: "Device Connected",
