@@ -10,6 +10,19 @@ interface BluetoothDevice {
   bluetoothDevice?: any; // Store the actual Bluetooth device object
 }
 
+// BLE Configuration for ECG Device
+const TARGET_ADDRESS = "6614D41F-1CB3-77FA-3E35-C5A446EA4E3F";
+const CHANNEL_UUIDS = {
+  1: "00008171-0000-1000-8000-00805f9b34fb",
+  2: "00008172-0000-1000-8000-00805f9b34fb",
+  3: "00008173-0000-1000-8000-00805f9b34fb",
+  4: "00008174-0000-1000-8000-00805f9b34fb",
+  5: "00008175-0000-1000-8000-00805f9b34fb",
+  6: "00008176-0000-1000-8000-00805f9b34fb",
+  7: "00008177-0000-1000-8000-00805f9b34fb",
+  8: "00008178-0000-1000-8000-00805f9b34fb",
+};
+
 export function useBluetooth() {
   const [bleStatus, setBleStatus] = useState<
     "connected" | "disconnected" | "connecting"
@@ -19,6 +32,127 @@ export function useBluetooth() {
     useState<BluetoothDevice | null>(null);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const { toast } = useToast();
+
+  // Function to enable notifications for ECG channels
+  const enableECGNotifications = useCallback(async (gattServer: any) => {
+    const enabledChannels: string[] = [];
+    
+    try {
+      console.log("Discovering all available services...");
+      const services = await gattServer.getPrimaryServices();
+      console.log("Available services:", services.map((s: any) => s.uuid));
+      
+      // Try to find and enable notifications for each ECG channel
+      for (const [channel, uuid] of Object.entries(CHANNEL_UUIDS)) {
+        try {
+          console.log(`Attempting to enable notifications for channel ${channel} (${uuid})`);
+          
+          let characteristic = null;
+          
+          // Method 1: Try to get service by the channel UUID directly
+          try {
+            const service = await gattServer.getPrimaryService(uuid);
+            console.log(`Found service for channel ${channel}`);
+            
+            // Try to get characteristics in this service
+            const characteristics = await service.getCharacteristics();
+            console.log(`Service ${uuid} has ${characteristics.length} characteristics`);
+            
+            // Look for a characteristic that supports notifications
+            for (const char of characteristics) {
+              if (char.properties.notify || char.properties.indicate) {
+                characteristic = char;
+                console.log(`Found notifiable characteristic: ${char.uuid}`);
+                break;
+              }
+            }
+            
+            // If no notifiable characteristic found, try the first one
+            if (!characteristic && characteristics.length > 0) {
+              characteristic = characteristics[0];
+              console.log(`Using first characteristic: ${characteristic.uuid}`);
+            }
+          } catch (serviceError) {
+            console.log(`Service ${uuid} not found, trying alternative discovery...`);
+            
+            // Method 2: Search through all services for characteristics with the channel UUID
+            for (const service of services) {
+              try {
+                const characteristics = await service.getCharacteristics();
+                for (const char of characteristics) {
+                  if (char.uuid === uuid || char.uuid.toLowerCase() === uuid.toLowerCase()) {
+                    characteristic = char;
+                    console.log(`Found characteristic ${uuid} in service ${service.uuid}`);
+                    break;
+                  }
+                }
+                if (characteristic) break;
+              } catch (charError) {
+                // Continue searching in other services
+                continue;
+              }
+            }
+          }
+          
+          if (characteristic) {
+            // Check if notifications are supported
+            if (characteristic.properties.notify || characteristic.properties.indicate) {
+              // Enable notifications
+              await characteristic.startNotifications();
+              console.log(`Notifications enabled for channel ${channel}`);
+              
+              // Add event listener for data
+              characteristic.addEventListener('characteristicvaluechanged', (event: any) => {
+                const value = event.target.value;
+                const data = new Uint8Array(value.buffer);
+                
+                console.log(`ECG Channel ${channel} data:`, Array.from(data));
+                
+                // Send ECG data to WebSocket for real-time processing
+                // You can expand this to parse the data format your device uses
+                const ecgDataPoint = {
+                  timestamp: Date.now(),
+                  channel: parseInt(channel),
+                  data: Array.from(data),
+                  voltage: data.length > 0 ? (data[0] - 128) * 0.1 : 0 // Example conversion
+                };
+                
+                // TODO: Send to WebSocket or store for analysis
+                console.log(`Processed ECG data for channel ${channel}:`, ecgDataPoint);
+              });
+              
+              enabledChannels.push(channel);
+            } else {
+              console.warn(`Characteristic for channel ${channel} does not support notifications`);
+            }
+          } else {
+            console.warn(`Could not find characteristic for channel ${channel}`);
+          }
+          
+        } catch (error) {
+          console.warn(`Failed to enable notifications for channel ${channel}:`, error);
+          // Continue with other channels even if one fails
+        }
+      }
+    } catch (error) {
+      console.error("Error during service discovery:", error);
+    }
+    
+    if (enabledChannels.length > 0) {
+      toast({
+        title: "ECG Notifications Enabled",
+        description: `Successfully enabled ${enabledChannels.length} ECG channels: ${enabledChannels.join(', ')}`,
+      });
+    } else {
+      toast({
+        title: "ECG Setup Warning", 
+        description: "Could not enable ECG channel notifications. Check device compatibility.",
+        variant: "destructive"
+      });
+    }
+    
+    return enabledChannels;
+  }, [toast]);
 
   // Handle device disconnection events
   const handleDeviceDisconnection = useCallback(async (deviceId: string, deviceName: string) => {
@@ -110,7 +244,13 @@ export function useBluetooth() {
       // Request Bluetooth device with ECG service - this both scans and connects
       const device = await (navigator as any).bluetooth.requestDevice({
         filters: [{ namePrefix: "IoT Holter" }],
-        optionalServices: ["heart_rate", "battery_service", "0000180d-0000-1000-8000-00805f9b34fb"],
+        optionalServices: [
+          "heart_rate", 
+          "battery_service", 
+          "0000180d-0000-1000-8000-00805f9b34fb",
+          // Include all ECG channel UUIDs as optional services
+          ...Object.values(CHANNEL_UUIDS)
+        ],
       });
 
       if (device) {
@@ -121,6 +261,9 @@ export function useBluetooth() {
         device.addEventListener('gattserverdisconnected', () => {
           handleDeviceDisconnection(device.id, device.name || "IoT Holter");
         });
+
+        // Enable ECG channel notifications
+        await enableECGNotifications(gattServer);
         
         const newDevice: BluetoothDevice = {
           id: device.id,
@@ -199,7 +342,13 @@ export function useBluetooth() {
         // Request the specific IoT Holter device directly
         const bluetoothDevice = await (navigator as any).bluetooth.requestDevice({
           filters: [{ namePrefix: "IoT Holter" }],
-          optionalServices: ['heart_rate', 'battery_service', '0000180d-0000-1000-8000-00805f9b34fb']
+          optionalServices: [
+            'heart_rate', 
+            'battery_service', 
+            '0000180d-0000-1000-8000-00805f9b34fb',
+            // Include all ECG channel UUIDs as optional services
+            ...Object.values(CHANNEL_UUIDS)
+          ]
         });
 
         if (!bluetoothDevice) {
@@ -213,6 +362,9 @@ export function useBluetooth() {
         bluetoothDevice.addEventListener('gattserverdisconnected', () => {
           handleDeviceDisconnection(bluetoothDevice.id, bluetoothDevice.name || "IoT Holter");
         });
+
+        // Enable ECG channel notifications
+        await enableECGNotifications(server);
         
         // Try to discover available services on the device
         let service;
