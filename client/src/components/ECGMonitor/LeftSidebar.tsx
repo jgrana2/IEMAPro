@@ -187,7 +187,7 @@ export function LeftSidebar({
                     onClick={onScanDevices}
                     className="w-full"
                     variant={bleStatus === "connected" ? "secondary" : "outline"}
-                    disabled={bleStatus === "connecting"}
+                    disabled={bleStatus === "connecting" || bleStatus === "connected"}
                   >
                     {bleStatus === "connecting" ? (
                       <>
