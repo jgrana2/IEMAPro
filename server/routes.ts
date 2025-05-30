@@ -82,6 +82,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/ble-devices/device/:deviceId", async (req, res) => {
+    try {
+      const deviceId = req.params.deviceId;
+      const updates = req.body;
+      
+      // Find device by deviceId first
+      const device = await storage.getBleDeviceByDeviceId(deviceId);
+      if (!device) {
+        return res.status(404).json({ error: "Device not found" });
+      }
+      
+      const updatedDevice = await storage.updateBleDevice(device.id, updates);
+      res.json(updatedDevice);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update BLE device" });
+    }
+  });
+
   // Recording Session routes
   app.get("/api/recording-sessions", async (req, res) => {
     try {

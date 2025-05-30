@@ -88,11 +88,11 @@ export function useBluetooth() {
         }
 
         // Update device connection status in backend
-        await apiRequest({
-          method: "PATCH",
-          endpoint: `/api/ble-devices/IoT-Holter-001`,
-          body: { isConnected: true }
-        });
+        await apiRequest(
+          "PATCH",
+          `/api/ble-devices/device/IoT-Holter-001`,
+          { isConnected: true }
+        );
 
         // Simulate connection process
         await new Promise((resolve) => setTimeout(resolve, 2000));
