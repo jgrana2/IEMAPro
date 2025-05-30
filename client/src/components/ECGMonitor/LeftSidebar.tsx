@@ -208,45 +208,78 @@ export function LeftSidebar({
                   </Button>
 
                   {/* Connected Device Display */}
-                  {bleStatus === "connected" && bleDevices.some((device: any) => device.isConnected) && (
+                  {bleStatus === "connected" && (
                     <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20">
                       <CardContent className="p-3 space-y-3">
-                        {bleDevices
-                          .filter((device: any) => device.isConnected)
-                          .map((device: any) => (
-                            <div key={device.id} className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-2">
-                                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                  <div>
-                                    <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                                      {device.name}
-                                    </p>
-                                    <p className="text-xs text-green-600 dark:text-green-400">
-                                      Signal: {device.rssi || "Strong"} dBm
-                                    </p>
+                        {bleDevices.filter((device: any) => device.isConnected).length > 0 ? (
+                          bleDevices
+                            .filter((device: any) => device.isConnected)
+                            .map((device: any) => (
+                              <div key={device.id} className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                    <div>
+                                      <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                                        {device.name}
+                                      </p>
+                                      <p className="text-xs text-green-600 dark:text-green-400">
+                                        Signal: {device.rssi || "Strong"} dBm
+                                      </p>
+                                    </div>
                                   </div>
+                                  <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                                    Active
+                                  </Badge>
                                 </div>
-                                <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                                  Active
-                                </Badge>
+                                <Button
+                                  onClick={() => {
+                                    if (window.confirm("Are you sure you want to disconnect this device?")) {
+                                      onDisconnectDevice();
+                                    }
+                                  }}
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+                                >
+                                  <Unplug className="h-3 w-3 mr-1" />
+                                  Disconnect Device
+                                </Button>
                               </div>
-                              <Button
-                                onClick={() => {
-                                  if (window.confirm("Are you sure you want to disconnect this device?")) {
-                                    onDisconnectDevice();
-                                  }
-                                }}
-                                variant="outline"
-                                size="sm"
-                                className="w-full border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
-                              >
-                                <Unplug className="h-3 w-3 mr-1" />
-                                Disconnect Device
-                              </Button>
+                            ))
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                <div>
+                                  <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                                    IoT Holter Device
+                                  </p>
+                                  <p className="text-xs text-green-600 dark:text-green-400">
+                                    Signal: Strong
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                                Active
+                              </Badge>
                             </div>
-                          ))
-                        }
+                            <Button
+                              onClick={() => {
+                                if (window.confirm("Are you sure you want to disconnect this device?")) {
+                                  onDisconnectDevice();
+                                }
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="w-full border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+                            >
+                              <Unplug className="h-3 w-3 mr-1" />
+                              Disconnect Device
+                            </Button>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   )}
