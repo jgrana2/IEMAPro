@@ -56,59 +56,151 @@ function adcToVoltage(adcValue: number, gain: number = 1): number {
 
 /**
  * Parse ADS1298 ECG data packet
- * Maps device channels directly: Channel 1 (8171) = Lead I
- * 84 bytes = 28 samples of 3 bytes each from single channel
+ * Based on device code: each sample contains data from 8 channels
+ * Format: [status(3)] + [ch1(3)] + [ch2(3)] + ... + [ch8(3)] = 27 bytes per sample
+ * HRZ_SAMPLES_PER_PACKET = 28, but we handle variable packet sizes
  */
 export function parseADS1298Data(rawData: number[]): ParsedECGData {
-  if (rawData.length !== 84) {
-    throw new Error(`Invalid data length: expected 84 bytes, got ${rawData.length}`);
+  if (!rawData || rawData.length === 0) {
+    return {
+      samples: [],
+      timestamp: Date.now(),
+      sampleRate: 500,
+      quality: 'noise'
+    };
   }
 
   const samples: ADS1298Sample[] = [];
-  const leadIData: number[] = [];
   
-  // Parse 84 bytes as 28 samples of 3 bytes each from Lead I (channel 8171)
-  for (let i = 0; i < 28; i++) {
-    const byteIndex = i * 3;
-    if (byteIndex + 2 < rawData.length) {
-      const byte1 = rawData[byteIndex];
-      const byte2 = rawData[byteIndex + 1];
-      const byte3 = rawData[byteIndex + 2];
+  // Based on device code: each sample has 27 bytes (3 status + 8 channels * 3 bytes each)
+  // But we might be receiving partial data or simplified format, so try multiple approaches
+  
+  const bytesPerFullSample = 27; // Full ADS1298 sample format
+  const bytesPerChannelPair = 6; // Simplified 2-channel format
+  
+  // Try full 8-channel format first
+  const fullSamples = Math.floor(rawData.length / bytesPerFullSample);
+  
+  if (fullSamples > 0) {
+    console.log(`Processing ${rawData.length} bytes as full ADS1298 format: ${fullSamples} samples`);
+    
+    for (let sampleIdx = 0; sampleIdx < fullSamples; sampleIdx++) {
+      const sampleOffset = sampleIdx * bytesPerFullSample;
       
-      const adcValue = parse24BitSigned(byte1, byte2, byte3);
-      const voltage = adcToVoltage(adcValue, 6); // ECG gain
+      // Skip 3 status bytes, start from channel data
+      const channelDataStart = sampleOffset + 3;
       
-      leadIData.push(voltage); // All samples are Lead I (channel 8171)
+      if (channelDataStart + 24 <= rawData.length) { // Need 8 channels * 3 bytes = 24 bytes
+        
+        // Extract all 8 channels (each channel is 3 bytes)
+        const channels: number[] = [];
+        for (let ch = 0; ch < 8; ch++) {
+          const chOffset = channelDataStart + (ch * 3);
+          const channelValue = parse24BitSigned(
+            rawData[chOffset],
+            rawData[chOffset + 1],
+            rawData[chOffset + 2]
+          );
+          channels.push(adcToVoltage(channelValue, 12)); // Gain 12 from device config
+        }
+        
+        // Map channels to ECG leads based on device configuration
+        const sample: ADS1298Sample = {
+          leadI: channels[0],    // Channel 1
+          leadII: channels[1],   // Channel 2
+          leadIII: channels[2],  // Channel 3 or calculated
+          aVR: channels[3],      // Channel 4 or calculated
+          aVL: channels[4],      // Channel 5 or calculated
+          aVF: channels[5],      // Channel 6 or calculated
+          V1: channels[6],       // Channel 7
+          V2: channels[7],       // Channel 8
+          V3: 0,  // Would need more channels
+          V4: 0,
+          V5: 0,
+          V6: 0
+        };
+
+        samples.push(sample);
+      }
     }
   }
   
-  // Create samples with Lead I data only
-  // Note: Without Lead II, we cannot calculate derived leads accurately
-  for (let i = 0; i < leadIData.length; i++) {
-    const leadI = leadIData[i];
+  // If full format didn't work, try 2-channel format (channels 8171/8172)
+  if (samples.length === 0 && rawData.length >= bytesPerChannelPair) {
+    console.log(`Falling back to 2-channel parsing: ${rawData.length} bytes`);
+    const channelPairSamples = Math.floor(rawData.length / bytesPerChannelPair);
     
-    const sample: ADS1298Sample = {
-      leadI,
-      leadII: 0, // Not available from single channel
-      leadIII: 0, // Cannot calculate without Lead II
-      aVR: -leadI / 2, // Approximate calculation
-      aVL: leadI / 2, // Approximate calculation
-      aVF: 0, // Cannot calculate without Lead II
-      V1: 0, // Chest leads not available
-      V2: 0,
-      V3: 0,
-      V4: 0,
-      V5: 0,
-      V6: 0,
-    };
+    for (let i = 0; i < channelPairSamples; i++) {
+      const offset = i * bytesPerChannelPair;
+      
+      if (offset + 5 < rawData.length) {
+        // Channel 1 (Lead I) - bytes 0,1,2
+        const leadI = adcToVoltage(parse24BitSigned(
+          rawData[offset],
+          rawData[offset + 1], 
+          rawData[offset + 2]
+        ), 12);
+        
+        // Channel 2 (Lead II) - bytes 3,4,5
+        const leadII = adcToVoltage(parse24BitSigned(
+          rawData[offset + 3],
+          rawData[offset + 4],
+          rawData[offset + 5]
+        ), 12);
+        
+        // Calculate derived leads using Einthoven's triangle
+        const leadIII = leadII - leadI;
+        const aVR = -(leadI + leadII) / 2;
+        const aVL = leadI - leadII / 2;
+        const aVF = leadII - leadI / 2;
+        
+        const sample: ADS1298Sample = {
+          leadI,
+          leadII,
+          leadIII,
+          aVR,
+          aVL,
+          aVF,
+          V1: 0, V2: 0, V3: 0, V4: 0, V5: 0, V6: 0
+        };
+
+        samples.push(sample);
+      }
+    }
+  }
+  
+  // If still no samples, try single channel format
+  if (samples.length === 0 && rawData.length >= 3) {
+    console.log(`Falling back to single-channel parsing: ${rawData.length} bytes`);
+    const singleChannelSamples = Math.floor(rawData.length / 3);
     
-    samples.push(sample);
+    for (let i = 0; i < singleChannelSamples; i++) {
+      const offset = i * 3;
+      
+      if (offset + 2 < rawData.length) {
+        const leadI = adcToVoltage(parse24BitSigned(
+          rawData[offset],
+          rawData[offset + 1],
+          rawData[offset + 2]
+        ), 12);
+        
+        const sample: ADS1298Sample = {
+          leadI,
+          leadII: 0,
+          leadIII: 0,
+          aVR: -leadI / 2,
+          aVL: leadI / 2,
+          aVF: 0,
+          V1: 0, V2: 0, V3: 0, V4: 0, V5: 0, V6: 0
+        };
+
+        samples.push(sample);
+      }
+    }
   }
 
-  // Assess signal quality based on Lead I
   const quality = assessSignalQuality(samples);
-
-  console.log(`Parsed ${samples.length} ECG samples from channel 8171 (Lead I), quality: ${quality}`);
+  console.log(`Parsed ${samples.length} ECG samples from channels 8171/8172, quality: ${quality}`);
 
   return {
     samples,
