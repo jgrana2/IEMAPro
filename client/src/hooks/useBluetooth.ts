@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { parseADS1298Data, convertToECGFormat, calculateHeartRateFromSamples, type ParsedECGData } from "@/lib/ads1298-parser";
 
 interface BluetoothDevice {
   id: string;
@@ -8,6 +9,10 @@ interface BluetoothDevice {
   rssi?: number;
   isConnected: boolean;
   bluetoothDevice?: any; // Store the actual Bluetooth device object
+}
+
+interface BluetoothHookProps {
+  onECGData?: (ecgData: { [leadName: string]: number[] }, heartRate: number, quality: string) => void;
 }
 
 // BLE Configuration for ECG Device
@@ -31,7 +36,7 @@ const EXTENDED_CHANNEL_UUIDS = {
   8: "00008178-0000-1000-8000-00805f9b34fb"
 };
 
-export function useBluetooth() {
+export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
   const [bleStatus, setBleStatus] = useState<
     "connected" | "disconnected" | "connecting"
   >("disconnected");
@@ -88,20 +93,30 @@ export function useBluetooth() {
                 targetCharacteristic.addEventListener('characteristicvaluechanged', (event: any) => {
                   const value = event.target.value;
                   const data = new Uint8Array(value.buffer);
+                  const rawData = Array.from(data);
                   
-                  console.log(`ECG data from ${targetCharUUID}:`, Array.from(data));
+                  console.log(`BLE data from ${targetCharUUID}: ${rawData.length} bytes`);
                   
-                  // Process ECG data - adjust this based on your device's data format
-                  const ecgDataPoint = {
-                    timestamp: Date.now(),
-                    characteristic: targetCharUUID,
-                    rawData: Array.from(data),
-                    // Convert raw data to voltage (example - adjust for your device)
-                    voltage: data.length > 0 ? (data[0] - 128) * 0.01 : 0
-                  };
-                  
-                  // Send to data processing pipeline
-                  console.log(`Processed ECG data:`, ecgDataPoint);
+                  // Process ECG data directly using ADS1298 parser
+                  try {
+                    if (rawData.length === 84) { // Full ADS1298 packet
+                      const parsedData: ParsedECGData = parseADS1298Data(rawData);
+                      const leadData = convertToECGFormat(parsedData);
+                      const heartRate = calculateHeartRateFromSamples(parsedData.samples, parsedData.sampleRate);
+                      
+                      console.log(`Parsed ${parsedData.samples.length} ECG samples from BLE`);
+                      console.log(`Lead I data: ${leadData['Lead I']?.length || 0} samples`);
+                      
+                      // Send processed data to callback
+                      if (onECGData) {
+                        onECGData(leadData, heartRate, parsedData.quality);
+                      }
+                    } else {
+                      console.log(`Received ${rawData.length} bytes - not a full ADS1298 packet`);
+                    }
+                  } catch (parseError) {
+                    console.error('Failed to parse BLE ECG data:', parseError);
+                  }
                 });
                 
                 enabledChannels.push(targetCharUUID);

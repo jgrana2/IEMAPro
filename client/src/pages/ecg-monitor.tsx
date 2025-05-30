@@ -14,12 +14,44 @@ export default function ECGMonitor() {
   const { leftExpanded, rightExpanded, toggleLeft, toggleRight } =
     useSidebarState();
   const { wsStatus, sendMessage } = useWebSocket();
-  const { bleStatus, devices, scanDevices, connectDevice, disconnectDevice } = useBluetooth();
-
+  
   const [currentPatient, setCurrentPatient] = useState<any>(null);
   const [currentSession, setCurrentSession] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [ecgData, setEcgData] = useState<any[]>([]);
+  const [ecgData, setEcgData] = useState<{ [leadName: string]: number[] }>({});
+  const [heartRate, setHeartRate] = useState(0);
+  const [signalQuality, setSignalQuality] = useState<'good' | 'poor' | 'noise'>('poor');
+
+  // Handle ECG data from BLE directly
+  const handleECGData = (leadData: { [leadName: string]: number[] }, hr: number, quality: string) => {
+    // Update ECG data buffer with rolling window
+    const maxBufferSize = 2500; // Keep ~5 seconds at 500Hz
+    const newBuffer = { ...ecgData };
+
+    Object.entries(leadData).forEach(([leadName, newSamples]) => {
+      if (!newBuffer[leadName]) {
+        newBuffer[leadName] = [];
+      }
+      
+      // Append new samples
+      newBuffer[leadName] = [...newBuffer[leadName], ...newSamples];
+      
+      // Keep only the most recent samples
+      if (newBuffer[leadName].length > maxBufferSize) {
+        newBuffer[leadName] = newBuffer[leadName].slice(-maxBufferSize);
+      }
+    });
+
+    setEcgData(newBuffer);
+    setHeartRate(hr);
+    setSignalQuality(quality as 'good' | 'poor' | 'noise');
+    
+    console.log(`ECG data updated: Lead I samples: ${newBuffer['Lead I']?.length || 0}, HR: ${hr}, Quality: ${quality}`);
+  };
+
+  const { bleStatus, devices, scanDevices, connectDevice, disconnectDevice } = useBluetooth({ 
+    onECGData: handleECGData 
+  });
   const [aiPanelExpanded, setAiPanelExpanded] = useState(true);
   const [aiPanelHeight, setAiPanelHeight] = useState(400);
   const [isDragging, setIsDragging] = useState(false);
@@ -115,6 +147,9 @@ export default function ECGMonitor() {
               onStopRecording={() => setIsRecording(false)}
               bleStatus={bleStatus}
               wsStatus={wsStatus}
+              ecgData={ecgData}
+              heartRate={heartRate}
+              signalQuality={signalQuality}
             />
           </div>
 
