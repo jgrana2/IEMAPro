@@ -7,6 +7,7 @@ interface BluetoothDevice {
   name: string;
   rssi?: number;
   isConnected: boolean;
+  bluetoothDevice?: any; // Store the actual Bluetooth device object
 }
 
 export function useBluetooth() {
@@ -42,6 +43,7 @@ export function useBluetooth() {
           id: device.id,
           name: device.name || "Unknown Device",
           isConnected: false,
+          bluetoothDevice: device, // Store the actual Bluetooth device
         };
 
         setDevices((prev) => {
@@ -87,6 +89,36 @@ export function useBluetooth() {
           description: "Connecting to IoT Holter device",
         });
 
+        // Find the actual Bluetooth device from the scanned devices
+        const device = devices.find(d => d.id === deviceId);
+        if (!device) {
+          throw new Error("Device not found in scanned devices");
+        }
+
+        // Use the stored Bluetooth device object from scanning
+        const bluetoothDevice = device.bluetoothDevice;
+        
+        if (!bluetoothDevice) {
+          throw new Error("Device not properly scanned. Please scan for devices first.");
+        }
+
+        // Connect to GATT server
+        const server = await bluetoothDevice.gatt.connect();
+        
+        // Try to get heart rate service (common for ECG devices)
+        let service;
+        try {
+          service = await server.getPrimaryService('heart_rate');
+        } catch {
+          // If heart rate service not available, try generic services
+          const services = await server.getPrimaryServices();
+          if (services.length > 0) {
+            service = services[0];
+          } else {
+            throw new Error("No compatible services found on device");
+          }
+        }
+
         // Update device connection status in backend
         await apiRequest(
           "PATCH",
@@ -94,17 +126,15 @@ export function useBluetooth() {
           { isConnected: true }
         );
 
-        // Simulate connection process
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
         setBleStatus("connected");
+        setConnectedDevice({ ...device, isConnected: true });
 
         // Invalidate cache to refresh device list
         queryClient.invalidateQueries({ queryKey: ["/api/ble-devices"] });
 
         toast({
           title: "Device Connected",
-          description: "Successfully connected to IoT Holter",
+          description: `Successfully connected to ${device.name}`,
         });
 
       } catch (error) {
@@ -119,7 +149,7 @@ export function useBluetooth() {
         });
       }
     },
-    [toast],
+    [devices, toast],
   );
 
   const disconnectDevice = useCallback(() => {
