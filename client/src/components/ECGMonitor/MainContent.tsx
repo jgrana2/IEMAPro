@@ -56,69 +56,29 @@ export function MainContent({
     refetchInterval: 2000, // Refresh logs every 2 seconds
   });
 
-  // Simulate heart rate variations
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setHeartRate((prev) => {
-        const variation = Math.floor(Math.random() * 6) - 3; // ±3 BPM
-        return Math.max(60, Math.min(100, prev + variation));
-      });
-    }, 2000);
+  // Heart rate now comes from real ADS1298 data via WebSocket
 
-    return () => clearInterval(interval);
-  }, []);
-
-  // Generate ECG data and store history for reports
+  // Store ECG data for history when recording with real ADS1298 data
   useEffect(() => {
-    const generateECGData = () => {
+    if (isRecording && Object.keys(ecgData).length > 0) {
       const timestamp = Date.now();
-      const newData: { [key: string]: number[] } = {};
       const leadsData: { [leadName: string]: number } = {};
-
-      ECG_LEADS.forEach((lead, index) => {
-        const data = [];
-        for (let i = 0; i < 500; i++) {
-          let value = 0;
-
-          // QRS complex simulation
-          if (i % 100 < 5) {
-            value = Math.sin(((i % 100) * Math.PI) / 2.5) * (0.5 + index * 0.1);
-          }
-          // T wave simulation
-          else if (i % 100 < 20) {
-            value =
-              Math.sin((((i % 100) - 5) * Math.PI) / 15) * (0.2 + index * 0.05);
-          }
-          // Baseline with noise
-          else {
-            value = (Math.random() - 0.5) * 0.05;
-          }
-
-          data.push(value);
-        }
-        newData[lead.name] = data;
-        leadsData[lead.name] = generateSimulatedECGData(lead.name, timestamp);
+      
+      // Convert current ECG data to single values for history
+      Object.entries(ecgData).forEach(([leadName, dataArray]) => {
+        leadsData[leadName] = dataArray[dataArray.length - 1] || 0;
       });
 
-      setEcgData(newData);
-
-      // Store ECG data point for history
-      if (isRecording) {
-        const ecgDataPoint: ECGData = {
-          timestamp,
-          leads: leadsData,
-          heartRate,
-          quality: "good",
-        };
-        setEcgHistory((prev) => [...prev.slice(-999), ecgDataPoint]); // Keep last 1000 points
-      }
-    };
-
-    generateECGData();
-    const interval = setInterval(generateECGData, 100); // Update every 100ms
-
-    return () => clearInterval(interval);
-  }, [heartRate, isRecording]);
+      const ecgDataPoint: ECGData = {
+        timestamp,
+        leads: leadsData,
+        heartRate,
+        quality: signalQuality,
+      };
+      
+      setEcgHistory((prev) => [...prev.slice(-999), ecgDataPoint]);
+    }
+  }, [isRecording, ecgData, heartRate, signalQuality]);
 
   const handleGeneratePDF = async () => {
     if (!currentPatient) {

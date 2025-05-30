@@ -406,6 +406,11 @@ export function LeftSidebar({
                     </div>
                   </div>
                 </div>
+
+                <Separator />
+
+                {/* ADS1298 Test Panel */}
+                <ADS1298TestPanel />
               </div>
             ) : (
               // Collapsed Icons
