@@ -61,9 +61,8 @@ export function LeftSidebar({
     queryKey: ["/api/patients"],
   });
 
-  const { data: bleDevices = [] } = useQuery({
-    queryKey: ["/api/ble-devices"],
-  });
+  // Use devices prop instead of API data for real-time Bluetooth state
+  const bleDevices = devices;
 
   const handleConnectWebSocket = () => {
     onSendMessage({
