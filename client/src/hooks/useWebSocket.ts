@@ -74,6 +74,9 @@ export function useWebSocket() {
               setSignalQuality(parsedData.quality);
 
               console.log(`ECG data parsed: ${parsedData.samples.length} samples, HR: ${calculatedHeartRate}, Quality: ${parsedData.quality}`);
+              console.log('Lead data keys:', Object.keys(leadData));
+              console.log('Lead I data length:', leadData['Lead I']?.length || 0);
+              console.log('Lead II data length:', leadData['Lead II']?.length || 0);
             } catch (parseError) {
               console.error('Failed to parse ADS1298 data:', parseError);
             }
