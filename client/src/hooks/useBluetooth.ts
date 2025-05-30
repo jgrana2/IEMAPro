@@ -67,7 +67,7 @@ export function useBluetooth() {
           console.log("Device connection lost, triggering disconnection handler");
           handleDeviceDisconnection(
             connectedDevice.id, 
-            connectedDevice.name || "IoT Holter Device"
+            connectedDevice.name || "IoT Holter"
           );
         }
       }
@@ -109,12 +109,12 @@ export function useBluetooth() {
         
         // Add disconnection event listener
         device.addEventListener('gattserverdisconnected', () => {
-          handleDeviceDisconnection(device.id, device.name || "IoT Holter Device");
+          handleDeviceDisconnection(device.id, device.name || "IoT Holter");
         });
         
         const newDevice: BluetoothDevice = {
           id: device.id,
-          name: device.name || "IoT Holter Device",
+          name: device.name || "IoT Holter",
           isConnected: true,
           bluetoothDevice: device,
         };
@@ -134,7 +134,7 @@ export function useBluetooth() {
         try {
           await apiRequest("POST", "/api/ble-devices", {
             deviceId: device.id,
-            name: device.name || "IoT Holter Device",
+            name: device.name || "IoT Holter",
             isConnected: true,
             rssi: -50, // Default signal strength
           });
