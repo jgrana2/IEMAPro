@@ -19,6 +19,66 @@ export function useBluetooth() {
     useState<BluetoothDevice | null>(null);
   const { toast } = useToast();
 
+  // Monitor connection status periodically
+  useEffect(() => {
+    const monitorConnection = () => {
+      if (connectedDevice && connectedDevice.bluetoothDevice) {
+        const isStillConnected = connectedDevice.bluetoothDevice.gatt?.connected;
+        
+        if (!isStillConnected && bleStatus === "connected") {
+          console.log("Device connection lost, triggering disconnection handler");
+          handleDeviceDisconnection(
+            connectedDevice.id, 
+            connectedDevice.name || "IoT Holter Device"
+          );
+        }
+      }
+    };
+
+    // Check connection status every 5 seconds
+    const interval = setInterval(monitorConnection, 5000);
+
+    return () => clearInterval(interval);
+  }, [connectedDevice, bleStatus, handleDeviceDisconnection]);
+
+  // Handle device disconnection events
+  const handleDeviceDisconnection = useCallback(async (deviceId: string, deviceName: string) => {
+    console.log(`Device ${deviceName} (${deviceId}) disconnected`);
+    
+    // Update local state
+    setDevices((prev) =>
+      prev.map((d) =>
+        d.id === deviceId ? { ...d, isConnected: false } : d,
+      ),
+    );
+    
+    if (connectedDevice?.id === deviceId) {
+      setConnectedDevice(null);
+    }
+    
+    setBleStatus("disconnected");
+
+    // Update backend
+    try {
+      await apiRequest(
+        "PATCH",
+        `/api/ble-devices/device/${deviceId}`,
+        { isConnected: false }
+      );
+      
+      // Invalidate cache to refresh device list
+      queryClient.invalidateQueries({ queryKey: ["/api/ble-devices"] });
+    } catch (error) {
+      console.warn("Failed to update device disconnection in backend:", error);
+    }
+
+    toast({
+      title: "Device Disconnected",
+      description: `${deviceName} has been disconnected.`,
+      variant: "destructive",
+    });
+  }, [connectedDevice, toast, queryClient]);
+
   const scanDevices = useCallback(async () => {
     if (!(navigator as any).bluetooth) {
       toast({
@@ -47,6 +107,11 @@ export function useBluetooth() {
         // Connect to the device immediately after selection
         const gattServer = await device.gatt.connect();
         
+        // Add disconnection event listener
+        device.addEventListener('gattserverdisconnected', () => {
+          handleDeviceDisconnection(device.id, device.name || "IoT Holter Device");
+        });
+        
         const newDevice: BluetoothDevice = {
           id: device.id,
           name: device.name || "IoT Holter Device",
@@ -67,14 +132,11 @@ export function useBluetooth() {
 
         // Save to backend
         try {
-          await apiRequest("/api/ble-devices", {
-            method: "POST",
-            body: {
-              deviceId: device.id,
-              name: device.name || "IoT Holter Device",
-              isConnected: true,
-              rssi: -50, // Default signal strength
-            },
+          await apiRequest("POST", "/api/ble-devices", {
+            deviceId: device.id,
+            name: device.name || "IoT Holter Device",
+            isConnected: true,
+            rssi: -50, // Default signal strength
           });
           
           // Invalidate cache to refresh device list
@@ -137,6 +199,11 @@ export function useBluetooth() {
         // Connect to GATT server
         const server = await bluetoothDevice.gatt.connect();
         
+        // Add disconnection event listener
+        bluetoothDevice.addEventListener('gattserverdisconnected', () => {
+          handleDeviceDisconnection(bluetoothDevice.id, bluetoothDevice.name || "IoT Holter");
+        });
+        
         // Try to discover available services on the device
         let service;
         try {
@@ -147,7 +214,7 @@ export function useBluetooth() {
           try {
             // Try to get all available services
             const services = await server.getPrimaryServices();
-            console.log("Available services:", services.map(s => s.uuid));
+            console.log("Available services:", services.map((s: any) => s.uuid));
             if (services.length > 0) {
               service = services[0];
               console.log("Using first available service:", service.uuid);
@@ -198,23 +265,51 @@ export function useBluetooth() {
     [devices, toast],
   );
 
-  const disconnectDevice = useCallback(() => {
-    if (connectedDevice) {
-      setDevices((prev) =>
-        prev.map((d) =>
-          d.id === connectedDevice.id ? { ...d, isConnected: false } : d,
-        ),
-      );
+  const disconnectDevice = useCallback(async () => {
+    if (connectedDevice && connectedDevice.bluetoothDevice) {
+      try {
+        // Remove event listeners
+        connectedDevice.bluetoothDevice.removeEventListener('gattserverdisconnected', handleDeviceDisconnection);
+        
+        // Disconnect from GATT server if connected
+        if (connectedDevice.bluetoothDevice.gatt?.connected) {
+          connectedDevice.bluetoothDevice.gatt.disconnect();
+        }
 
-      setConnectedDevice(null);
-      setBleStatus("disconnected");
+        // Update backend
+        await apiRequest(
+          "PATCH",
+          `/api/ble-devices/device/${connectedDevice.id}`,
+          { isConnected: false }
+        );
 
-      toast({
-        title: "Device Disconnected",
-        description: "Bluetooth device has been disconnected.",
-      });
+        // Update local state
+        setDevices((prev) =>
+          prev.map((d) =>
+            d.id === connectedDevice.id ? { ...d, isConnected: false } : d,
+          ),
+        );
+
+        setConnectedDevice(null);
+        setBleStatus("disconnected");
+
+        // Invalidate cache to refresh device list
+        queryClient.invalidateQueries({ queryKey: ["/api/ble-devices"] });
+
+        toast({
+          title: "Device Disconnected",
+          description: "Bluetooth device has been manually disconnected.",
+        });
+      } catch (error) {
+        console.error("Error during manual disconnection:", error);
+        toast({
+          title: "Disconnection Error",
+          description: "There was an issue disconnecting the device.",
+          variant: "destructive",
+        });
+      }
     }
-  }, [connectedDevice, toast]);
+  }, [connectedDevice, toast, queryClient, handleDeviceDisconnection]);
 
   return {
     bleStatus,
