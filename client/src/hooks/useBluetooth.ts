@@ -89,17 +89,14 @@ export function useBluetooth() {
           description: "Connecting to IoT Holter device",
         });
 
-        // Find the actual Bluetooth device from the scanned devices
-        const device = devices.find(d => d.id === deviceId);
-        if (!device) {
-          throw new Error("Device not found in scanned devices");
-        }
+        // Request the specific IoT Holter device directly
+        const bluetoothDevice = await (navigator as any).bluetooth.requestDevice({
+          filters: [{ namePrefix: "IoT Holter" }],
+          optionalServices: ['heart_rate', 'battery_service', '0000180d-0000-1000-8000-00805f9b34fb']
+        });
 
-        // Use the stored Bluetooth device object from scanning
-        const bluetoothDevice = device.bluetoothDevice;
-        
         if (!bluetoothDevice) {
-          throw new Error("Device not properly scanned. Please scan for devices first.");
+          throw new Error("No Bluetooth device selected");
         }
 
         // Connect to GATT server
