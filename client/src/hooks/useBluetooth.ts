@@ -20,8 +20,7 @@ const TARGET_ADDRESS = "6614D41F-1CB3-77FA-3E35-C5A446EA4E3F";
 // Convert short UUIDs to full 128-bit format for Web Bluetooth API
 const TARGET_SERVICE_UUID = "0000805b-0000-1000-8000-00805f9b34fb";
 const TARGET_CHARACTERISTIC_UUIDS = [
-  "00008171-0000-1000-8000-00805f9b34fb",
-  "00008172-0000-1000-8000-00805f9b34fb"
+  "00008171-0000-1000-8000-00805f9b34fb"
 ];
 
 // Extended channel configuration (for devices with more channels)

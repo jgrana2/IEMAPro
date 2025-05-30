@@ -1,0 +1,47 @@
+async def notification_handler(self, channel: int, sender, data):
+        """Generic notification handler for any channel."""
+        if self.buffer_idx == channel - 1:
+            # Convert hex string to bytes
+            hex_data = data.hex()
+            data_bytes = bytes.fromhex(hex_data)
+            data_array = process_24bit_data(data_bytes)
+
+            # Apply baseline wander removal
+            self.samples_arrays[channel], self.last_data_previous[channel], self.last_y_previous[channel] = \
+                apply_baseline_wander_removal(
+                    data_array, 
+                    self.samples_arrays[channel],
+                    self.last_data_previous[channel],
+                    self.last_y_previous[channel],
+                    BASELINE_WANDER_ALPHA
+                )
+            
+            # Record the processed data to a file
+            self.file_manager.write_channel_data(channel, self.samples_arrays[channel])
+            
+            self.buffer_idx += 1
+            
+            # Special handling for the last channel
+            if channel == 8:
+                await self.handle_final_channel()
+    
+    async def handle_final_channel(self):
+        """Handle processing after the final channel data is received."""
+        # Append samples to channel buffers
+        for i in range(8):
+            self.channel_buffers[i].extend(self.samples_arrays[i + 1].tolist())
+        
+        # Send when we have at least the required buffer size
+        if len(self.channel_buffers[0]) >= WEBSOCKET_BUFFER_SIZE:
+            ecg_data = ECGData()
+            for i in range(8):
+                ecg_data.set_channel_data(i + 1, self.channel_buffers[i][:WEBSOCKET_BUFFER_SIZE])
+            
+            data_packet = ecg_data.to_websocket_packet(WEBSOCKET_BUFFER_SIZE)
+            await self.ws.send(json.dumps(data_packet))
+            
+            # Remove sent samples
+            for i in range(8):
+                self.channel_buffers[i] = self.channel_buffers[i][WEBSOCKET_BUFFER_SIZE:]
+        
+        self.buffer_idx = 0
