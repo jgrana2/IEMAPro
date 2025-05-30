@@ -13,7 +13,7 @@ export default function ECGMonitor() {
   const { leftExpanded, rightExpanded, toggleLeft, toggleRight } =
     useSidebarState();
   const { wsStatus, sendMessage } = useWebSocket();
-  const { bleStatus, devices, scanDevices, connectDevice } = useBluetooth();
+  const { bleStatus, devices, scanDevices, connectDevice, disconnectDevice } = useBluetooth();
 
   const [currentPatient, setCurrentPatient] = useState<any>(null);
   const [currentSession, setCurrentSession] = useState<any>(null);
@@ -86,6 +86,7 @@ export default function ECGMonitor() {
         devices={devices}
         onScanDevices={scanDevices}
         onConnectDevice={connectDevice}
+        onDisconnectDevice={disconnectDevice}
         currentPatient={currentPatient}
         onPatientSelect={setCurrentPatient}
         wsStatus={wsStatus}
