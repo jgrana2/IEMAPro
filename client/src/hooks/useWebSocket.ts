@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { parseADS1298Data, convertToECGFormat, calculateHeartRateFromSamples, type ParsedECGData } from '@/lib/ads1298-parser';
+import { parseADS1298DataRaw, convertToECGFormat, calculateHeartRateFromSamples, type ParsedECGData } from '@/lib/ads1298-parser';
 
 interface WebSocketMessage {
   type: string;
@@ -46,7 +46,7 @@ export function useWebSocket() {
           // Handle ADS1298 ECG data
           if (message.type === 'ads1298_data' && message.rawData) {
             try {
-              const parsedData: ParsedECGData = parseADS1298Data(message.rawData);
+              const parsedData: ParsedECGData = parseADS1298DataRaw(message.rawData);
               const leadData = convertToECGFormat(parsedData);
               const calculatedHeartRate = calculateHeartRateFromSamples(parsedData.samples, parsedData.sampleRate);
 

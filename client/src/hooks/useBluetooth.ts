@@ -100,7 +100,7 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
                   // Process ECG data directly using ADS1298 parser
                   try {
                     if (rawData.length === 84) { // Full ADS1298 packet
-                      const parsedData: ParsedECGData = parseADS1298Data(rawData);
+                      const parsedData: ParsedECGData = parseADS1298DataRaw(rawData);
                       const leadData = convertToECGFormat(parsedData);
                       const heartRate = calculateHeartRateFromSamples(parsedData.samples, parsedData.sampleRate);
                       
