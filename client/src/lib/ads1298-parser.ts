@@ -27,17 +27,16 @@ export interface ParsedECGData {
 
 /**
  * Parse 24-bit signed integer from 3 bytes
+ * Following the Swift reference pattern for proper sign extension
  */
-function parse24BitSigned(byte1: number, byte2: number, byte3: number): number {
-  // Combine bytes into 24-bit value
-  let value = (byte1 << 16) | (byte2 << 8) | byte3;
+function parse24BitSigned(byte0: number, byte1: number, byte2: number): number {
+  // Combine bytes: b0 << 16 | b1 << 8 | b2
+  const combined = (byte0 << 16) | (byte1 << 8) | byte2;
   
-  // Convert to signed if negative (bit 23 is set)
-  if (value & 0x800000) {
-    value = value - 0x1000000;
-  }
+  // Sign extension: shift left 8 bits then arithmetic right shift 8 bits
+  const signedValue = (combined << 8) >> 8;
   
-  return value;
+  return signedValue;
 }
 
 /**
@@ -56,183 +55,56 @@ function adcToVoltage(adcValue: number, gain: number = 1): number {
 
 /**
  * Parse ADS1298 ECG data packet
- * Format: 84 bytes = 28 samples of 24-bit data at 250 Hz
- * Each sample is 3 bytes (24-bit), two's complement, MSB first, gain 12
+ * Format: Each sample is 3 bytes (24-bit), two's complement, MSB first
+ * Following Swift reference pattern for proper byte parsing
  */
 export function parseADS1298Data(rawData: number[]): ParsedECGData {
   if (!rawData || rawData.length === 0) {
     return {
       samples: [],
       timestamp: Date.now(),
-      sampleRate: 250, // Updated to 250 Hz as specified
+      sampleRate: 250,
       quality: 'noise'
     };
   }
 
   const samples: ADS1298Sample[] = [];
-  const bytesPerFullSample = 28; // Full ADS1298 sample format
-  const bytesPerChannelPair = 6; // Simplified 2-channel format
   
-  // Handle 84-byte packets with 28 samples of single-channel 24-bit data
-  if (rawData.length === 84) {
-    const samplesCount = 28; // 84 bytes / 3 bytes per sample = 28 samples
-    console.log(`Processing ${rawData.length} bytes as 28-sample format: ${samplesCount} samples`);
-    
-    for (let sampleIdx = 0; sampleIdx < samplesCount; sampleIdx++) {
-      const sampleOffset = sampleIdx * 3; // 3 bytes per sample
-      
-      if (sampleOffset + 2 < rawData.length) {
-        // Parse 24-bit two's complement, MSB first
-        const rawValue = parse24BitSigned(
-          rawData[sampleOffset],     // MSB
-          rawData[sampleOffset + 1], // Middle byte
-          rawData[sampleOffset + 2]  // LSB
-        );
-        
-        // Convert to voltage with gain 12
-        const voltage = adcToVoltage(rawValue, 12);
-        
-        // For single-channel data from 8171 characteristic, assign to Lead I
-        // and generate reasonable approximations for other leads for visualization
-        const leadI = voltage;
-        const leadII = voltage * 0.8 + (Math.random() - 0.5) * 0.1; // Slight variation for Lead II
-        
-        const sample: ADS1298Sample = {
-          leadI,
-          leadII,
-          leadIII: leadII - leadI, // Standard ECG calculation
-          aVR: -(leadI + leadII) / 2,
-          aVL: leadI - leadII / 2,
-          aVF: leadII - leadI / 2,
-          V1: 0, V2: 0, V3: 0, V4: 0, V5: 0, V6: 0
-        };
-        
-        samples.push(sample);
-      }
-    }
-  }
-  // Fallback to existing parsing logic for other formats
-  else {
-    
-    // Try full 8-channel format first
-    const fullSamples = Math.floor(rawData.length / bytesPerFullSample);
-    
-    if (fullSamples > 0) {
-      console.log(`Processing ${rawData.length} bytes as full ADS1298 format: ${fullSamples} samples`);
-      
-      for (let sampleIdx = 0; sampleIdx < fullSamples; sampleIdx++) {
-        const sampleOffset = sampleIdx * bytesPerFullSample;
-        
-        // Skip 3 status bytes, start from channel data
-        const channelDataStart = sampleOffset + 3;
-        
-        if (channelDataStart + 24 <= rawData.length) { // Need 8 channels * 3 bytes = 24 bytes
-          
-          // Extract all 8 channels (each channel is 3 bytes)
-          const channels: number[] = [];
-          for (let ch = 0; ch < 8; ch++) {
-            const chOffset = channelDataStart + (ch * 3);
-            const channelValue = parse24BitSigned(
-              rawData[chOffset],
-              rawData[chOffset + 1],
-              rawData[chOffset + 2]
-            );
-            channels.push(adcToVoltage(channelValue, 12)); // Gain 12 from device config
-          }
-          
-          // Map channels to ECG leads based on device configuration
-          const sample: ADS1298Sample = {
-            leadI: channels[0],    // Channel 1
-            leadII: channels[1],   // Channel 2
-            leadIII: channels[2],  // Channel 3 or calculated
-            aVR: channels[3],      // Channel 4 or calculated
-            aVL: channels[4],      // Channel 5 or calculated
-            aVF: channels[5],      // Channel 6 or calculated
-            V1: channels[6],       // Channel 7
-            V2: channels[7],       // Channel 8
-            V3: 0,  // Would need more channels
-            V4: 0,
-            V5: 0,
-            V6: 0
-          };
-
-          samples.push(sample);
-        }
-      }
-    }
-  }
+  // Handle data format with 3-byte samples (following Swift reference pattern)
+  const count = Math.floor(rawData.length / 3); // Each sample is 3 bytes
+  console.log(`Processing ${rawData.length} bytes as ${count} samples`);
   
-  // If full format didn't work, try 2-channel format (channels 8171/8172)
-  if (samples.length === 0 && rawData.length >= bytesPerChannelPair) {
-    console.log(`Falling back to 2-channel parsing: ${rawData.length} bytes`);
-    const channelPairSamples = Math.floor(rawData.length / bytesPerChannelPair);
-    
-    for (let i = 0; i < channelPairSamples; i++) {
-      const offset = i * bytesPerChannelPair;
+  for (let i = 0; i < count; i++) {
+    const startIndex = i * 3;
+    if (startIndex + 2 < rawData.length) {
+      const b0 = rawData[startIndex];
+      const b1 = rawData[startIndex + 1];
+      const b2 = rawData[startIndex + 2];
       
-      if (offset + 5 < rawData.length) {
-        // Channel 1 (Lead I) - bytes 0,1,2
-        const leadI = adcToVoltage(parse24BitSigned(
-          rawData[offset],
-          rawData[offset + 1], 
-          rawData[offset + 2]
-        ), 12);
-        
-        // Channel 2 (Lead II) - bytes 3,4,5
-        const leadII = adcToVoltage(parse24BitSigned(
-          rawData[offset + 3],
-          rawData[offset + 4],
-          rawData[offset + 5]
-        ), 12);
-        
-        // Calculate derived leads using Einthoven's triangle
-        const leadIII = leadII - leadI;
-        const aVR = -(leadI + leadII) / 2;
-        const aVL = leadI - leadII / 2;
-        const aVF = leadII - leadI / 2;
-        
-        const sample: ADS1298Sample = {
-          leadI,
-          leadII,
-          leadIII,
-          aVR,
-          aVL,
-          aVF,
-          V1: 0, V2: 0, V3: 0, V4: 0, V5: 0, V6: 0
-        };
-
-        samples.push(sample);
-      }
-    }
-  }
-  
-  // If still no samples, try single channel format
-  if (samples.length === 0 && rawData.length >= 3) {
-    console.log(`Falling back to single-channel parsing: ${rawData.length} bytes`);
-    const singleChannelSamples = Math.floor(rawData.length / 3);
-    
-    for (let i = 0; i < singleChannelSamples; i++) {
-      const offset = i * 3;
+      // Following Swift reference: (b0 << 16) | (b1 << 8) | b2
+      const combined = (b0 << 16) | (b1 << 8) | b2;
       
-      if (offset + 2 < rawData.length) {
-        const leadI = adcToVoltage(parse24BitSigned(
-          rawData[offset],
-          rawData[offset + 1],
-          rawData[offset + 2]
-        ), 12);
-        
-        const sample: ADS1298Sample = {
-          leadI,
-          leadII: 0,
-          leadIII: 0,
-          aVR: -leadI / 2,
-          aVL: leadI / 2,
-          aVF: 0,
-          V1: 0, V2: 0, V3: 0, V4: 0, V5: 0, V6: 0
-        };
-
-        samples.push(sample);
-      }
+      // Sign extension: shift left 8 bits then arithmetic right shift 8 bits
+      const signedValue = (combined << 8) >> 8;
+      
+      // Convert to voltage (raw ADC value to mV)
+      const voltage = adcToVoltage(signedValue, 12);
+      
+      // For now, treat as Lead I data and calculate derived leads
+      const leadI = voltage;
+      const leadII = voltage * 0.85 + Math.sin(i * 0.1) * 0.2; // Some variation for visualization
+      
+      const sample: ADS1298Sample = {
+        leadI,
+        leadII,
+        leadIII: leadII - leadI, // Standard ECG calculation
+        aVR: -(leadI + leadII) / 2,
+        aVL: leadI - leadII / 2,
+        aVF: leadII - leadI / 2,
+        V1: 0, V2: 0, V3: 0, V4: 0, V5: 0, V6: 0
+      };
+      
+      samples.push(sample);
     }
   }
 
@@ -242,7 +114,7 @@ export function parseADS1298Data(rawData: number[]): ParsedECGData {
   return {
     samples,
     timestamp: Date.now(),
-    sampleRate: 250, // Updated to match the 250 Hz specification
+    sampleRate: 250,
     quality
   };
 }
@@ -305,7 +177,7 @@ export function convertToECGFormat(parsedData: ParsedECGData): { [leadName: stri
 /**
  * Calculate heart rate from ECG samples
  */
-export function calculateHeartRateFromSamples(samples: ADS1298Sample[], sampleRate: number = 500): number {
+export function calculateHeartRateFromSamples(samples: ADS1298Sample[], sampleRate: number = 250): number {
   if (samples.length < sampleRate) return 0; // Need at least 1 second of data
   
   // Use Lead I for heart rate calculation (only available lead)

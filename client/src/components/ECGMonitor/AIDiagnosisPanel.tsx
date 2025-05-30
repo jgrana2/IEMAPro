@@ -27,7 +27,7 @@ interface ECGAnalysis {
 interface AIDiagnosisPanelProps {
   currentPatient: any;
   isRecording: boolean;
-  ecgData?: any[];
+  ecgData?: { [leadName: string]: number[] };
 }
 
 export function AIDiagnosisPanel({
