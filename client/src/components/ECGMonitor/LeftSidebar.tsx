@@ -51,7 +51,7 @@ export function LeftSidebar({
   onSendMessage,
 }: LeftSidebarProps) {
   const [bufferSize, setBufferSize] = useState(250);
-  const [websocketUrl, setWebsocketUrl] = useState("ws://localhost:5000/ws");
+  const [websocketUrl, setWebsocketUrl] = useState("wss://hrzmed.org");
   const [showPatientDialog, setShowPatientDialog] = useState(false);
 
   const { data: patients = [] } = useQuery({
@@ -255,14 +255,14 @@ export function LeftSidebar({
                       <Label className="text-xs text-muted-foreground">
                         Sample Rate (Hz)
                       </Label>
-                      <Select defaultValue="1000">
+                      <Select defaultValue="250">
                         <SelectTrigger className="mt-1">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="250">250 Hz</SelectItem>
                           <SelectItem value="500">500 Hz</SelectItem>
                           <SelectItem value="1000">1000 Hz</SelectItem>
-                          <SelectItem value="2000">2000 Hz</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
