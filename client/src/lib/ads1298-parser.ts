@@ -56,8 +56,8 @@ function adcToVoltage(adcValue: number, gain: number = 1): number {
 
 /**
  * Parse ADS1298 ECG data packet
- * Expected format: 84 bytes = 28 samples * 3 bytes per sample
- * Each sample contains data for one channel, cycling through 8 channels
+ * Maps device channels directly: Channel 1 (8171) = Lead I, Channel 2 (8172) = Lead II
+ * 84 bytes = 28 samples of 3 bytes each, alternating between channels
  */
 export function parseADS1298Data(rawData: number[]): ParsedECGData {
   if (rawData.length !== 84) {
@@ -65,35 +65,39 @@ export function parseADS1298Data(rawData: number[]): ParsedECGData {
   }
 
   const samples: ADS1298Sample[] = [];
-  const channelData: { [key: number]: number[] } = {
-    0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: []
-  };
-
-  // Parse 28 samples (84 bytes / 3 bytes per sample)
+  const leadIData: number[] = [];
+  const leadIIData: number[] = [];
+  
+  // Parse 84 bytes as 28 samples of 3 bytes each
+  // Assume alternating between Lead I (channel 8171) and Lead II (channel 8172)
   for (let i = 0; i < 28; i++) {
     const byteIndex = i * 3;
-    const byte1 = rawData[byteIndex];
-    const byte2 = rawData[byteIndex + 1];
-    const byte3 = rawData[byteIndex + 2];
-    
-    const adcValue = parse24BitSigned(byte1, byte2, byte3);
-    const voltage = adcToVoltage(adcValue);
-    
-    // Distribute samples across 8 channels (leads)
-    const channel = i % 8;
-    channelData[channel].push(voltage);
+    if (byteIndex + 2 < rawData.length) {
+      const byte1 = rawData[byteIndex];
+      const byte2 = rawData[byteIndex + 1];
+      const byte3 = rawData[byteIndex + 2];
+      
+      const adcValue = parse24BitSigned(byte1, byte2, byte3);
+      const voltage = adcToVoltage(adcValue, 6); // ECG gain
+      
+      // Alternate between Lead I and Lead II
+      if (i % 2 === 0) {
+        leadIData.push(voltage); // Even indices = Lead I (channel 8171)
+      } else {
+        leadIIData.push(voltage); // Odd indices = Lead II (channel 8172)
+      }
+    }
   }
-
-  // Map channels to 12-lead ECG
-  // Assuming first 8 channels map to primary leads
-  const sampleCount = Math.min(...Object.values(channelData).map(arr => arr.length));
   
-  for (let sampleIdx = 0; sampleIdx < sampleCount; sampleIdx++) {
-    // Calculate derived leads from primary leads
-    const leadI = channelData[0][sampleIdx] || 0;
-    const leadII = channelData[1][sampleIdx] || 0;
-    const leadIII = leadII - leadI; // Lead III = Lead II - Lead I
+  // Create samples by pairing Lead I and Lead II data
+  const sampleCount = Math.min(leadIData.length, leadIIData.length);
+  
+  for (let i = 0; i < sampleCount; i++) {
+    const leadI = leadIData[i];
+    const leadII = leadIIData[i];
+    const leadIII = leadII - leadI; // Standard ECG calculation
     
+    // Calculate augmented leads
     const aVR = -(leadI + leadII) / 2;
     const aVL = leadI - leadII / 2;
     const aVF = leadII - leadI / 2;
@@ -105,24 +109,26 @@ export function parseADS1298Data(rawData: number[]): ParsedECGData {
       aVR,
       aVL,
       aVF,
-      V1: channelData[2][sampleIdx] || 0,
-      V2: channelData[3][sampleIdx] || 0,
-      V3: channelData[4][sampleIdx] || 0,
-      V4: channelData[5][sampleIdx] || 0,
-      V5: channelData[6][sampleIdx] || 0,
-      V6: channelData[7][sampleIdx] || 0,
+      V1: 0, // Chest leads not available from your 2-channel device
+      V2: 0,
+      V3: 0,
+      V4: 0,
+      V5: 0,
+      V6: 0,
     };
     
     samples.push(sample);
   }
 
-  // Assess signal quality based on variance and amplitude
+  // Assess signal quality based on Lead II (primary lead)
   const quality = assessSignalQuality(samples);
+
+  console.log(`Parsed ${samples.length} ECG samples from channels 8171/8172, quality: ${quality}`);
 
   return {
     samples,
     timestamp: Date.now(),
-    sampleRate: 500, // ADS1298 typical sample rate
+    sampleRate: 500,
     quality
   };
 }

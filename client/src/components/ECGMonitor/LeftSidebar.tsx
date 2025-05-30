@@ -25,7 +25,6 @@ import {
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { PatientDialog } from "./PatientDialog";
-import { ADS1298TestPanel } from "./ADS1298TestPanel";
 
 interface LeftSidebarProps {
   isExpanded: boolean;
@@ -406,11 +405,6 @@ export function LeftSidebar({
                     </div>
                   </div>
                 </div>
-
-                <Separator />
-
-                {/* ADS1298 Test Panel */}
-                <ADS1298TestPanel />
               </div>
             ) : (
               // Collapsed Icons
