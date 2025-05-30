@@ -33,7 +33,7 @@ interface AIDiagnosisPanelProps {
 export function AIDiagnosisPanel({
   currentPatient,
   isRecording,
-  ecgData = [],
+  ecgData = {},
 }: AIDiagnosisPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -101,7 +101,7 @@ export function AIDiagnosisPanel({
     // Send to AI for analysis
     analyzeWithAI({
       message: inputValue,
-      ecgData: ecgData.length > 0 ? ecgData.slice(-100) : undefined, // Send last 100 data points
+      ecgData: Object.keys(ecgData).length > 0 ? Object.values(ecgData).flat().slice(-100) : undefined, // Send last 100 data points
     });
 
     setInputValue("");
@@ -115,7 +115,7 @@ export function AIDiagnosisPanel({
   };
 
   const analyzeCurrentECG = () => {
-    if (ecgData.length === 0) {
+    if (Object.keys(ecgData).length === 0) {
       const noDataMessage: ChatMessage = {
         id: Date.now().toString(),
         role: "assistant",
@@ -139,7 +139,7 @@ export function AIDiagnosisPanel({
     analyzeWithAI({
       message:
         "Analyze the current ECG data for abnormalities, rhythm, and provide diagnostic insights",
-      ecgData: ecgData.slice(-250), // Send last 250 data points for analysis
+      ecgData: Object.values(ecgData).flat().slice(-250), // Send last 250 data points for analysis
     });
   };
 
@@ -184,7 +184,7 @@ export function AIDiagnosisPanel({
               size="sm"
               variant="outline"
               onClick={analyzeCurrentECG}
-              disabled={isAnalyzing || ecgData.length === 0}
+              disabled={isAnalyzing || Object.keys(ecgData).length === 0}
               className="text-xs sm:text-sm"
             >
               <Heart className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
