@@ -12,19 +12,23 @@ interface BluetoothDevice {
 
 // BLE Configuration for ECG Device
 const TARGET_ADDRESS = "6614D41F-1CB3-77FA-3E35-C5A446EA4E3F";
-const TARGET_SERVICE_UUID = "805B";
-const TARGET_CHARACTERISTIC_UUIDS = ["8171", "8172"];
+// Convert short UUIDs to full 128-bit format for Web Bluetooth API
+const TARGET_SERVICE_UUID = "0000805b-0000-1000-8000-00805f9b34fb";
+const TARGET_CHARACTERISTIC_UUIDS = [
+  "00008171-0000-1000-8000-00805f9b34fb",
+  "00008172-0000-1000-8000-00805f9b34fb"
+];
 
 // Extended channel configuration (for devices with more channels)
 const EXTENDED_CHANNEL_UUIDS = {
-  1: "8171",
-  2: "8172", 
-  3: "8173",
-  4: "8174",
-  5: "8175",
-  6: "8176",
-  7: "8177",
-  8: "8178"
+  1: "00008171-0000-1000-8000-00805f9b34fb",
+  2: "00008172-0000-1000-8000-00805f9b34fb", 
+  3: "00008173-0000-1000-8000-00805f9b34fb",
+  4: "00008174-0000-1000-8000-00805f9b34fb",
+  5: "00008175-0000-1000-8000-00805f9b34fb",
+  6: "00008176-0000-1000-8000-00805f9b34fb",
+  7: "00008177-0000-1000-8000-00805f9b34fb",
+  8: "00008178-0000-1000-8000-00805f9b34fb"
 };
 
 export function useBluetooth() {
