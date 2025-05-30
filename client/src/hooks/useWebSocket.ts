@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { parseADS1298Data, convertToECGFormat, calculateHeartRateFromSamples, type ParsedECGData } from '@/lib/ads1298-parser';
 
 interface WebSocketMessage {
   type: string;
@@ -8,10 +9,14 @@ interface WebSocketMessage {
 export function useWebSocket() {
   const [wsStatus, setWsStatus] = useState<'connected' | 'disconnected' | 'connecting'>('disconnected');
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
+  const [ecgData, setEcgData] = useState<{ [leadName: string]: number[] }>({});
+  const [heartRate, setHeartRate] = useState<number>(0);
+  const [signalQuality, setSignalQuality] = useState<'good' | 'poor' | 'noise'>('good');
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
+  const ecgBufferRef = useRef<{ [leadName: string]: number[] }>({});
 
   const connect = useCallback((url?: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -37,6 +42,42 @@ export function useWebSocket() {
         try {
           const message = JSON.parse(event.data);
           setLastMessage(message);
+
+          // Handle ADS1298 ECG data
+          if (message.type === 'ads1298_data' && message.rawData) {
+            try {
+              const parsedData: ParsedECGData = parseADS1298Data(message.rawData);
+              const leadData = convertToECGFormat(parsedData);
+              const calculatedHeartRate = calculateHeartRateFromSamples(parsedData.samples, parsedData.sampleRate);
+
+              // Update ECG data buffer with rolling window
+              const maxBufferSize = 2500; // Keep ~5 seconds at 500Hz
+              const newBuffer = { ...ecgBufferRef.current };
+
+              Object.entries(leadData).forEach(([leadName, newSamples]) => {
+                if (!newBuffer[leadName]) {
+                  newBuffer[leadName] = [];
+                }
+                
+                // Append new samples
+                newBuffer[leadName] = [...newBuffer[leadName], ...newSamples];
+                
+                // Keep only the most recent samples
+                if (newBuffer[leadName].length > maxBufferSize) {
+                  newBuffer[leadName] = newBuffer[leadName].slice(-maxBufferSize);
+                }
+              });
+
+              ecgBufferRef.current = newBuffer;
+              setEcgData({ ...newBuffer });
+              setHeartRate(calculatedHeartRate);
+              setSignalQuality(parsedData.quality);
+
+              console.log(`ECG data parsed: ${parsedData.samples.length} samples, HR: ${calculatedHeartRate}, Quality: ${parsedData.quality}`);
+            } catch (parseError) {
+              console.error('Failed to parse ADS1298 data:', parseError);
+            }
+          }
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error);
         }
@@ -96,6 +137,17 @@ export function useWebSocket() {
     }
   }, []);
 
+  // Function to send ADS1298 data for testing or real data streaming
+  const sendADS1298Data = useCallback((rawData: number[], patientId?: string, sessionId?: string) => {
+    return sendMessage({
+      type: 'ads1298_data',
+      rawData,
+      patientId,
+      sessionId,
+      deviceId: '00008171-0000-1000-8000-00805f9b34fb'
+    });
+  }, [sendMessage]);
+
   // Auto-connect on mount
   useEffect(() => {
     connect();
@@ -108,8 +160,12 @@ export function useWebSocket() {
   return {
     wsStatus,
     lastMessage,
+    ecgData,
+    heartRate,
+    signalQuality,
     connect,
     disconnect,
     sendMessage,
+    sendADS1298Data,
   };
 }

@@ -252,6 +252,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             break;
 
+          case 'ads1298_data':
+            // Handle raw ADS1298 ECG data
+            const ads1298Message = JSON.stringify({
+              type: 'ads1298_data',
+              timestamp: Date.now(),
+              patientId: data.patientId,
+              sessionId: data.sessionId,
+              rawData: data.rawData, // Array of 84 bytes from ADS1298
+              deviceId: data.deviceId || '00008171-0000-1000-8000-00805f9b34fb'
+            });
+
+            // Broadcast to all connected clients for real-time visualization
+            activeConnections.forEach(client => {
+              if (client !== ws && client.readyState === WebSocket.OPEN) {
+                client.send(ads1298Message);
+              }
+            });
+
+            // Log ADS1298 data reception
+            await storage.createSystemLog({
+              level: "info",
+              message: `ADS1298 data received: ${data.rawData ? data.rawData.length : 0} bytes`,
+              source: "ads1298"
+            });
+            break;
+
           case 'buffer_flush':
             await storage.createSystemLog({
               level: "info",
