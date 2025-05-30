@@ -20,7 +20,7 @@ export function useBluetooth() {
   const { toast } = useToast();
 
   const scanDevices = useCallback(async () => {
-    if (!navigator.bluetooth) {
+    if (!(navigator as any).bluetooth) {
       toast({
         title: "Bluetooth Not Supported",
         description: "Web Bluetooth API is not supported in this browser.",
@@ -32,52 +32,87 @@ export function useBluetooth() {
     try {
       setBleStatus("connecting");
 
-      // Request Bluetooth device with ECG service
-      const device = await navigator.bluetooth.requestDevice({
+      toast({
+        title: "Scanning for Devices",
+        description: "Looking for IoT Holter ECG devices...",
+      });
+
+      // Request Bluetooth device with ECG service - this both scans and connects
+      const device = await (navigator as any).bluetooth.requestDevice({
         filters: [{ namePrefix: "IoT Holter" }],
-        optionalServices: ["heart_rate", "battery_service"],
+        optionalServices: ["heart_rate", "battery_service", "0000180d-0000-1000-8000-00805f9b34fb"],
       });
 
       if (device) {
+        // Connect to the device immediately after selection
+        const gattServer = await device.gatt.connect();
+        
         const newDevice: BluetoothDevice = {
           id: device.id,
-          name: device.name || "Unknown Device",
-          isConnected: false,
-          bluetoothDevice: device, // Store the actual Bluetooth device
+          name: device.name || "IoT Holter Device",
+          isConnected: true,
+          bluetoothDevice: device,
         };
 
         setDevices((prev) => {
           const exists = prev.find((d) => d.id === newDevice.id);
-          if (exists) return prev;
+          if (exists) {
+            return prev.map((d) => d.id === newDevice.id ? { ...d, isConnected: true } : d);
+          }
           return [...prev, newDevice];
         });
 
+        setConnectedDevice(newDevice);
+        setBleStatus("connected");
+
+        // Save to backend
+        try {
+          await apiRequest("/api/ble-devices", {
+            method: "POST",
+            body: {
+              deviceId: device.id,
+              name: device.name || "IoT Holter Device",
+              isConnected: true,
+              rssi: -50, // Default signal strength
+            },
+          });
+          
+          // Invalidate cache to refresh device list
+          queryClient.invalidateQueries({ queryKey: ["/api/ble-devices"] });
+        } catch (apiError) {
+          console.warn("Failed to save device to backend:", apiError);
+        }
+
         toast({
-          title: "Device Found",
-          description: `Found device: ${newDevice.name}`,
+          title: "Device Connected",
+          description: `Successfully connected to ${device.name || "IoT Holter Device"}`,
         });
       }
-
-      setBleStatus("disconnected");
     } catch (error) {
-      console.error("Bluetooth scan error:", error);
+      console.error("Bluetooth scan/connect error:", error);
       setBleStatus("disconnected");
 
       if (error instanceof Error && error.name === "NotFoundError") {
         toast({
           title: "No Device Selected",
-          description: "No Bluetooth device was selected.",
+          description: "Please select a device to connect.",
+          variant: "destructive",
+        });
+      } else if (error instanceof Error && error.name === "NotAllowedError") {
+        toast({
+          title: "Permission Denied",
+          description: "Bluetooth access was denied. Please allow Bluetooth permissions.",
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Bluetooth Error",
-          description: "Failed to scan for Bluetooth devices.",
+          title: "Connection Failed",
+          description: "Unable to connect to the device. Please try again.",
           variant: "destructive",
         });
       }
     }
-  }, [toast]);
+  }, [toast, queryClient]);
 
   const connectDevice = useCallback(
     async (deviceId: string) => {

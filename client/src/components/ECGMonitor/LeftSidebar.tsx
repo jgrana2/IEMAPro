@@ -179,53 +179,100 @@ export function LeftSidebar({
                   <Label className="text-sm font-medium text-foreground">
                     BLE ECG Device
                   </Label>
+                  
+                  {/* Unified Scan & Connect Button */}
                   <Button
                     onClick={onScanDevices}
                     className="w-full"
-                    variant="outline"
+                    variant={bleStatus === "connected" ? "secondary" : "outline"}
+                    disabled={bleStatus === "connecting"}
                   >
-                    <Search className="h-4 w-4 mr-2" />
-                    Scan for Devices
+                    {bleStatus === "connecting" ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-current" />
+                        Connecting...
+                      </>
+                    ) : bleStatus === "connected" ? (
+                      <>
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse mr-2" />
+                        Device Connected
+                      </>
+                    ) : (
+                      <>
+                        <Search className="h-4 w-4 mr-2" />
+                        Find & Connect Device
+                      </>
+                    )}
                   </Button>
 
-                  <div className="space-y-2">
-                    {bleDevices.map((device: any) => (
-                      <Card
-                        key={device.id}
-                        className="cursor-pointer hover:bg-accent"
-                      >
-                        <CardContent className="p-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <div
-                                className={`w-2 h-2 rounded-full ${
-                                  device.isConnected
-                                    ? "bg-green-500 animate-pulse"
-                                    : "bg-gray-400"
-                                }`}
-                              />
-                              <div>
-                                <p className="text-sm font-medium">
-                                  {device.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  RSSI: {device.rssi || "N/A"} dBm
-                                </p>
+                  {/* Connected Device Display */}
+                  {bleStatus === "connected" && bleDevices.some((device: any) => device.isConnected) && (
+                    <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20">
+                      <CardContent className="p-3">
+                        {bleDevices
+                          .filter((device: any) => device.isConnected)
+                          .map((device: any) => (
+                            <div key={device.id} className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                <div>
+                                  <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                                    {device.name}
+                                  </p>
+                                  <p className="text-xs text-green-600 dark:text-green-400">
+                                    Signal: {device.rssi || "Strong"} dBm
+                                  </p>
+                                </div>
                               </div>
+                              <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                                Active
+                              </Badge>
                             </div>
-                            {!device.isConnected && (
-                              <Button
-                                size="sm"
-                                onClick={() => onConnectDevice(device.deviceId)}
-                              >
-                                Connect
-                              </Button>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                          ))
+                        }
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Available Devices (when not connected) */}
+                  {bleStatus === "disconnected" && bleDevices.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">
+                        Found Devices - Tap to Connect
+                      </Label>
+                      <div className="space-y-2">
+                        {bleDevices
+                          .filter((device: any) => !device.isConnected)
+                          .map((device: any) => (
+                            <Card
+                              key={device.id}
+                              className="cursor-pointer hover:bg-accent hover:border-primary/50 transition-colors"
+                              onClick={() => onConnectDevice(device.deviceId)}
+                            >
+                              <CardContent className="p-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 rounded-full bg-gray-400" />
+                                    <div>
+                                      <p className="text-sm font-medium">
+                                        {device.name}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        Tap to connect • RSSI: {device.rssi || "N/A"} dBm
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    ▶
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))
+                        }
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <Separator />
