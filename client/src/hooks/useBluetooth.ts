@@ -9,9 +9,12 @@ interface BluetoothDevice {
 }
 
 export function useBluetooth() {
-  const [bleStatus, setBleStatus] = useState<'connected' | 'disconnected' | 'connecting'>('disconnected');
+  const [bleStatus, setBleStatus] = useState<
+    "connected" | "disconnected" | "connecting"
+  >("disconnected");
   const [devices, setDevices] = useState<BluetoothDevice[]>([]);
-  const [connectedDevice, setConnectedDevice] = useState<BluetoothDevice | null>(null);
+  const [connectedDevice, setConnectedDevice] =
+    useState<BluetoothDevice | null>(null);
   const { toast } = useToast();
 
   const scanDevices = useCallback(async () => {
@@ -25,27 +28,23 @@ export function useBluetooth() {
     }
 
     try {
-      setBleStatus('connecting');
-      
+      setBleStatus("connecting");
+
       // Request Bluetooth device with ECG service
       const device = await navigator.bluetooth.requestDevice({
-        filters: [
-          { namePrefix: 'ECG' },
-          { namePrefix: 'Heart' },
-          { namePrefix: 'BLE' }
-        ],
-        optionalServices: ['heart_rate', 'battery_service']
+        filters: [{ namePrefix: "IoT Holter" }],
+        optionalServices: ["heart_rate", "battery_service"],
       });
 
       if (device) {
         const newDevice: BluetoothDevice = {
           id: device.id,
-          name: device.name || 'Unknown Device',
-          isConnected: false
+          name: device.name || "Unknown Device",
+          isConnected: false,
         };
 
-        setDevices(prev => {
-          const exists = prev.find(d => d.id === newDevice.id);
+        setDevices((prev) => {
+          const exists = prev.find((d) => d.id === newDevice.id);
           if (exists) return prev;
           return [...prev, newDevice];
         });
@@ -55,13 +54,13 @@ export function useBluetooth() {
           description: `Found device: ${newDevice.name}`,
         });
       }
-      
-      setBleStatus('disconnected');
+
+      setBleStatus("disconnected");
     } catch (error) {
-      console.error('Bluetooth scan error:', error);
-      setBleStatus('disconnected');
-      
-      if (error instanceof Error && error.name === 'NotFoundError') {
+      console.error("Bluetooth scan error:", error);
+      setBleStatus("disconnected");
+
+      if (error instanceof Error && error.name === "NotFoundError") {
         toast({
           title: "No Device Selected",
           description: "No Bluetooth device was selected.",
@@ -77,57 +76,61 @@ export function useBluetooth() {
     }
   }, [toast]);
 
-  const connectDevice = useCallback(async (deviceId: string) => {
-    try {
-      setBleStatus('connecting');
-      
-      const device = devices.find(d => d.id === deviceId);
-      if (!device) {
-        throw new Error('Device not found');
+  const connectDevice = useCallback(
+    async (deviceId: string) => {
+      try {
+        setBleStatus("connecting");
+
+        const device = devices.find((d) => d.id === deviceId);
+        if (!device) {
+          throw new Error("Device not found");
+        }
+
+        // Simulate connection process
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+
+        setDevices((prev) =>
+          prev.map((d) =>
+            d.id === deviceId
+              ? { ...d, isConnected: true }
+              : { ...d, isConnected: false },
+          ),
+        );
+
+        setConnectedDevice({ ...device, isConnected: true });
+        setBleStatus("connected");
+
+        toast({
+          title: "Device Connected",
+          description: `Successfully connected to ${device.name}`,
+        });
+
+        // Start simulating ECG data notifications
+        // In a real implementation, this would subscribe to GATT characteristics
+      } catch (error) {
+        console.error("Bluetooth connection error:", error);
+        setBleStatus("disconnected");
+
+        toast({
+          title: "Connection Failed",
+          description: "Failed to connect to Bluetooth device.",
+          variant: "destructive",
+        });
       }
-
-      // Simulate connection process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      setDevices(prev => prev.map(d => 
-        d.id === deviceId 
-          ? { ...d, isConnected: true }
-          : { ...d, isConnected: false }
-      ));
-
-      setConnectedDevice({ ...device, isConnected: true });
-      setBleStatus('connected');
-
-      toast({
-        title: "Device Connected",
-        description: `Successfully connected to ${device.name}`,
-      });
-
-      // Start simulating ECG data notifications
-      // In a real implementation, this would subscribe to GATT characteristics
-      
-    } catch (error) {
-      console.error('Bluetooth connection error:', error);
-      setBleStatus('disconnected');
-      
-      toast({
-        title: "Connection Failed",
-        description: "Failed to connect to Bluetooth device.",
-        variant: "destructive",
-      });
-    }
-  }, [devices, toast]);
+    },
+    [devices, toast],
+  );
 
   const disconnectDevice = useCallback(() => {
     if (connectedDevice) {
-      setDevices(prev => prev.map(d => 
-        d.id === connectedDevice.id 
-          ? { ...d, isConnected: false }
-          : d
-      ));
-      
+      setDevices((prev) =>
+        prev.map((d) =>
+          d.id === connectedDevice.id ? { ...d, isConnected: false } : d,
+        ),
+      );
+
       setConnectedDevice(null);
-      setBleStatus('disconnected');
+      setBleStatus("disconnected");
 
       toast({
         title: "Device Disconnected",
