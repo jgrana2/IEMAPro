@@ -17,10 +17,17 @@ export function useBluetooth() {
   const [devices, setDevices] = useState<BluetoothDevice[]>([]);
   const [connectedDevice, setConnectedDevice] =
     useState<BluetoothDevice | null>(null);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
   const { toast } = useToast();
 
   // Handle device disconnection events
   const handleDeviceDisconnection = useCallback(async (deviceId: string, deviceName: string) => {
+    // Prevent duplicate disconnection handling
+    if (isDisconnecting || bleStatus === "disconnected") {
+      return;
+    }
+    
+    setIsDisconnecting(true);
     console.log(`Device ${deviceName} (${deviceId}) disconnected`);
     
     // Update local state
@@ -55,7 +62,10 @@ export function useBluetooth() {
       description: `${deviceName} has been disconnected.`,
       variant: "destructive",
     });
-  }, [connectedDevice, toast, queryClient]);
+    
+    // Reset disconnecting flag after a short delay
+    setTimeout(() => setIsDisconnecting(false), 1000);
+  }, [connectedDevice, toast, queryClient, isDisconnecting, bleStatus]);
 
   // Monitor connection status periodically
   useEffect(() => {
@@ -276,6 +286,13 @@ export function useBluetooth() {
       return;
     }
 
+    // Prevent duplicate disconnection handling
+    if (isDisconnecting || bleStatus === "disconnected") {
+      return;
+    }
+
+    setIsDisconnecting(true);
+
     try {
       console.log("Attempting to disconnect device:", connectedDevice.name);
       
@@ -344,8 +361,11 @@ export function useBluetooth() {
         description: "There was an issue disconnecting the device, but local state has been cleared.",
         variant: "destructive",
       });
+    } finally {
+      // Reset disconnecting flag after a short delay
+      setTimeout(() => setIsDisconnecting(false), 1000);
     }
-  }, [connectedDevice, toast, queryClient, handleDeviceDisconnection]);
+  }, [connectedDevice, toast, queryClient, handleDeviceDisconnection, isDisconnecting, bleStatus]);
 
   return {
     bleStatus,
