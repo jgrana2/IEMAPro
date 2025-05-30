@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -18,28 +18,6 @@ export function useBluetooth() {
   const [connectedDevice, setConnectedDevice] =
     useState<BluetoothDevice | null>(null);
   const { toast } = useToast();
-
-  // Monitor connection status periodically
-  useEffect(() => {
-    const monitorConnection = () => {
-      if (connectedDevice && connectedDevice.bluetoothDevice) {
-        const isStillConnected = connectedDevice.bluetoothDevice.gatt?.connected;
-        
-        if (!isStillConnected && bleStatus === "connected") {
-          console.log("Device connection lost, triggering disconnection handler");
-          handleDeviceDisconnection(
-            connectedDevice.id, 
-            connectedDevice.name || "IoT Holter Device"
-          );
-        }
-      }
-    };
-
-    // Check connection status every 5 seconds
-    const interval = setInterval(monitorConnection, 5000);
-
-    return () => clearInterval(interval);
-  }, [connectedDevice, bleStatus, handleDeviceDisconnection]);
 
   // Handle device disconnection events
   const handleDeviceDisconnection = useCallback(async (deviceId: string, deviceName: string) => {
@@ -78,6 +56,28 @@ export function useBluetooth() {
       variant: "destructive",
     });
   }, [connectedDevice, toast, queryClient]);
+
+  // Monitor connection status periodically
+  useEffect(() => {
+    const monitorConnection = () => {
+      if (connectedDevice && connectedDevice.bluetoothDevice) {
+        const isStillConnected = connectedDevice.bluetoothDevice.gatt?.connected;
+        
+        if (!isStillConnected && bleStatus === "connected") {
+          console.log("Device connection lost, triggering disconnection handler");
+          handleDeviceDisconnection(
+            connectedDevice.id, 
+            connectedDevice.name || "IoT Holter Device"
+          );
+        }
+      }
+    };
+
+    // Check connection status every 5 seconds
+    const interval = setInterval(monitorConnection, 5000);
+
+    return () => clearInterval(interval);
+  }, [connectedDevice, bleStatus, handleDeviceDisconnection]);
 
   const scanDevices = useCallback(async () => {
     if (!(navigator as any).bluetooth) {

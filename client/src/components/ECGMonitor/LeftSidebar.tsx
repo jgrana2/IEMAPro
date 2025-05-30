@@ -19,6 +19,7 @@ import {
   Bluetooth,
   Search,
   Plug,
+  Unplug,
   Settings,
   Plus,
 } from "lucide-react";
@@ -32,6 +33,7 @@ interface LeftSidebarProps {
   devices: any[];
   onScanDevices: () => void;
   onConnectDevice: (deviceId: string) => void;
+  onDisconnectDevice: () => void;
   currentPatient: any;
   onPatientSelect: (patient: any) => void;
   wsStatus: string;
@@ -45,6 +47,7 @@ export function LeftSidebar({
   devices,
   onScanDevices,
   onConnectDevice,
+  onDisconnectDevice,
   currentPatient,
   onPatientSelect,
   wsStatus,
@@ -231,10 +234,8 @@ export function LeftSidebar({
                               </div>
                               <Button
                                 onClick={() => {
-                                  // Use the disconnect function from the Bluetooth hook
-                                  // This should be passed as a prop to the sidebar
                                   if (window.confirm("Are you sure you want to disconnect this device?")) {
-                                    console.log("Disconnecting device:", device.deviceId);
+                                    onDisconnectDevice();
                                   }
                                 }}
                                 variant="outline"
