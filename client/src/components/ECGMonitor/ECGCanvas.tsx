@@ -94,11 +94,20 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
         const centerY = canvasHeight / 2;
         const amplitude = canvasHeight * 0.35; // Slightly larger amplitude
         
+        // Auto-scale for ADS1298 voltage values (typically around -18mV range)
+        const minValue = Math.min(...data);
+        const maxValue = Math.max(...data);
+        const range = maxValue - minValue;
+        const scaleFactor = range > 0 ? 1 / range : 1;
+        
         for (let i = 0; i < canvasWidth; i++) {
           const dataIndex = (offsetRef.current + i * 2) % data.length;
-          const value = data[dataIndex] || 0;
+          const rawValue = data[dataIndex] || 0;
+          // Normalize the value relative to the baseline (center of data range)
+          const baselineValue = (minValue + maxValue) / 2;
+          const normalizedValue = (rawValue - baselineValue) * scaleFactor;
           const x = i;
-          const y = centerY - (value * amplitude);
+          const y = centerY - (normalizedValue * amplitude);
           
           if (i === 0) {
             ctx.moveTo(x, y);
