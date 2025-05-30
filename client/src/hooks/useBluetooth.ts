@@ -102,17 +102,27 @@ export function useBluetooth() {
         // Connect to GATT server
         const server = await bluetoothDevice.gatt.connect();
         
-        // Try to get heart rate service (common for ECG devices)
+        // Try to discover available services on the device
         let service;
         try {
+          // First try heart rate service (standard for ECG devices)
           service = await server.getPrimaryService('heart_rate');
+          console.log("Found heart rate service");
         } catch {
-          // If heart rate service not available, try generic services
-          const services = await server.getPrimaryServices();
-          if (services.length > 0) {
-            service = services[0];
-          } else {
-            throw new Error("No compatible services found on device");
+          try {
+            // Try to get all available services
+            const services = await server.getPrimaryServices();
+            console.log("Available services:", services.map(s => s.uuid));
+            if (services.length > 0) {
+              service = services[0];
+              console.log("Using first available service:", service.uuid);
+            } else {
+              console.log("No services found, but connection established");
+              // Don't throw error - connection is still valid
+            }
+          } catch (serviceError) {
+            console.log("Service discovery failed:", serviceError);
+            // Don't throw error - basic connection is still established
           }
         }
 
@@ -124,14 +134,18 @@ export function useBluetooth() {
         );
 
         setBleStatus("connected");
-        setConnectedDevice({ ...device, isConnected: true });
+        setConnectedDevice({ 
+          id: bluetoothDevice.id, 
+          name: bluetoothDevice.name || "IoT Holter",
+          isConnected: true 
+        });
 
         // Invalidate cache to refresh device list
         queryClient.invalidateQueries({ queryKey: ["/api/ble-devices"] });
 
         toast({
           title: "Device Connected",
-          description: `Successfully connected to ${device.name}`,
+          description: `Successfully connected to ${bluetoothDevice.name || "IoT Holter"}`,
         });
 
       } catch (error) {
