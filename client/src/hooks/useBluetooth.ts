@@ -81,11 +81,11 @@ export function useBluetooth() {
     async (deviceId: string) => {
       try {
         setBleStatus("connecting");
-
-        const device = devices.find((d) => d.id === deviceId);
-        if (!device) {
-          throw new Error("Device not found");
-        }
+        
+        toast({
+          title: "Connecting...",
+          description: "Connecting to IoT Holter device",
+        });
 
         // Update device connection status in backend
         await apiRequest(
@@ -95,17 +95,8 @@ export function useBluetooth() {
         );
 
         // Simulate connection process
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        setDevices((prev) =>
-          prev.map((d) =>
-            d.id === deviceId
-              ? { ...d, isConnected: true }
-              : { ...d, isConnected: false },
-          ),
-        );
-
-        setConnectedDevice({ ...device, isConnected: true });
         setBleStatus("connected");
 
         // Invalidate cache to refresh device list
@@ -113,23 +104,22 @@ export function useBluetooth() {
 
         toast({
           title: "Device Connected",
-          description: `Successfully connected to ${device.name}`,
+          description: "Successfully connected to IoT Holter",
         });
 
-        // Start simulating ECG data notifications
-        // In a real implementation, this would subscribe to GATT characteristics
       } catch (error) {
         console.error("Bluetooth connection error:", error);
         setBleStatus("disconnected");
 
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
         toast({
           title: "Connection Failed",
-          description: "Failed to connect to Bluetooth device.",
+          description: `Failed to connect: ${errorMessage}`,
           variant: "destructive",
         });
       }
     },
-    [devices, toast],
+    [toast],
   );
 
   const disconnectDevice = useCallback(() => {
