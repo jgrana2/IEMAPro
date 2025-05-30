@@ -19,6 +19,9 @@ interface MainContentProps {
   onStopRecording: () => void;
   bleStatus: string;
   wsStatus: string;
+  ecgData?: { [leadName: string]: number[] };
+  heartRate?: number;
+  signalQuality?: 'good' | 'poor' | 'noise';
 }
 
 const ECG_LEADS = [
@@ -44,12 +47,15 @@ export function MainContent({
   onStopRecording,
   bleStatus,
   wsStatus,
+  ecgData = {},
+  heartRate = 0,
+  signalQuality = 'poor',
 }: MainContentProps) {
   const [ecgHistory, setEcgHistory] = useState<ECGData[]>([]);
   const { toast } = useToast();
   
-  // Use WebSocket hook to get real ADS1298 ECG data
-  const { ecgData, heartRate, signalQuality, sendADS1298Data } = useWebSocket();
+  // Get WebSocket functions for sending data (if needed)
+  const { sendADS1298Data } = useWebSocket();
 
   // Debug logging to see what data we're receiving
   useEffect(() => {
