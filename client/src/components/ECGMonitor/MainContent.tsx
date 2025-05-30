@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Square, FileText, Download } from "lucide-react";
+import { Play, Pause, Square, FileText, Download, Activity } from "lucide-react";
 import { ECGCarousel } from "./ECGCarousel";
 import { useQuery } from "@tanstack/react-query";
 import { generateECGReport, downloadPDF } from "@/lib/pdf-generator";
@@ -50,6 +50,19 @@ export function MainContent({
   
   // Use WebSocket hook to get real ADS1298 ECG data
   const { ecgData, heartRate, signalQuality, sendADS1298Data } = useWebSocket();
+
+  // Debug logging to see what data we're receiving
+  useEffect(() => {
+    if (Object.keys(ecgData).length > 0) {
+      console.log('ECG Data received in MainContent:', {
+        leadNames: Object.keys(ecgData),
+        leadISamples: ecgData['Lead I']?.length || 0,
+        leadIISamples: ecgData['Lead II']?.length || 0,
+        heartRate,
+        signalQuality
+      });
+    }
+  }, [ecgData, heartRate, signalQuality]);
 
   const { data: systemLogs = [] } = useQuery({
     queryKey: ["/api/system-logs"],
@@ -200,6 +213,25 @@ export function MainContent({
                         Generate PDF Report
                       </span>
                     </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const testData = [249, 245, 251, 250, 5, 32, 249, 243, 177, 249, 245, 223, 250, 14, 98, 250, 12, 56, 249, 242, 249, 249, 243, 186, 250, 9, 21, 249, 251, 223, 250, 12, 172, 250, 11, 112, 249, 242, 10, 249, 238, 46, 249, 244, 199, 250, 10, 150, 249, 245, 211, 249, 246, 112, 250, 11, 146, 249, 249, 26, 249, 243, 188, 249, 250, 215, 250, 14, 80, 249, 250, 233, 249, 246, 65, 249, 253, 249, 250, 19, 218, 250, 16, 51];
+                        sendADS1298Data(testData, currentPatient?.patientId, currentSession?.sessionId);
+                        toast({
+                          title: "Device Data Sent",
+                          description: "Your ADS1298 channels 8171/8172 data processed",
+                        });
+                      }}
+                      className="flex items-center space-x-2"
+                    >
+                      <Activity className="h-4 w-4" />
+                      <span className="hidden sm:inline">
+                        Test Device Data
+                      </span>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -211,7 +243,7 @@ export function MainContent({
                 ...lead,
                 data: ecgData[lead.name] || [],
               }))}
-              isActive={bleStatus === "connected"}
+              isActive={bleStatus === "connected" && Object.keys(ecgData).length > 0}
             />
           </CardContent>
         </Card>
