@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { parseADS1298Data, convertToECGFormat, calculateHeartRateFromSamples, type ParsedECGData } from "@/lib/ads1298-parser";
+import { parseADS1298DataRaw, convertToECGFormat, calculateHeartRateFromSamples, type ParsedECGData } from "@/lib/ads1298-parser";
 
 interface BluetoothDevice {
   id: string;

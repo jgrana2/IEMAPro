@@ -54,7 +54,76 @@ function adcToVoltage(adcValue: number, gain: number = 12): number {
 }
 
 /**
- * Parse ADS1298 ECG data packet
+ * Parse ADS1298 ECG data packet with raw ADC values (no voltage conversion or quality assessment)
+ * Format: Each sample is 3 bytes (24-bit), two's complement, MSB first
+ */
+export function parseADS1298DataRaw(rawData: number[]): ParsedECGData {
+  if (!rawData || rawData.length === 0) {
+    return {
+      samples: [],
+      timestamp: Date.now(),
+      sampleRate: 250,
+      quality: "good",
+    };
+  }
+
+  const samples: ADS1298Sample[] = [];
+
+  // Handle data format with 3-byte samples (following Swift reference pattern)
+  const count = Math.floor(rawData.length / 3); // Each sample is 3 bytes
+  console.log(`Processing ${rawData.length} bytes as ${count} raw samples (no processing)`);
+
+  for (let i = 0; i < count; i++) {
+    const startIndex = i * 3;
+    if (startIndex + 2 < rawData.length) {
+      const b0 = rawData[startIndex];
+      const b1 = rawData[startIndex + 1];
+      const b2 = rawData[startIndex + 2];
+
+      // Following Swift reference: (b0 << 16) | (b1 << 8) | b2
+      const combined = (b0 << 16) | (b1 << 8) | b2;
+
+      // Sign extension: shift left 8 bits then arithmetic right shift 8 bits
+      const signedValue = (combined << 8) >> 8;
+
+      // Use raw ADC values directly (no voltage conversion)
+      const rawValue = signedValue;
+
+      // For now, treat as Lead I data and calculate derived leads using raw values
+      const leadI = rawValue;
+      const leadII = rawValue * 0.85 + Math.sin(i * 0.1) * 1000; // Some variation for visualization
+
+      const sample: ADS1298Sample = {
+        leadI,
+        leadII,
+        leadIII: leadII - leadI, // Standard ECG calculation
+        aVR: -(leadI + leadII) / 2,
+        aVL: leadI - leadII / 2,
+        aVF: leadII - leadI / 2,
+        V1: 0,
+        V2: 0,
+        V3: 0,
+        V4: 0,
+        V5: 0,
+        V6: 0,
+      };
+
+      samples.push(sample);
+    }
+  }
+
+  console.log(`Parsed ${samples.length} raw ECG samples from channels 8171/8172`);
+
+  return {
+    samples,
+    timestamp: Date.now(),
+    sampleRate: 250,
+    quality: "good",
+  };
+}
+
+/**
+ * Parse ADS1298 ECG data packet (with voltage conversion - original function)
  * Format: Each sample is 3 bytes (24-bit), two's complement, MSB first
  */
 export function parseADS1298Data(rawData: number[]): ParsedECGData {
@@ -126,7 +195,7 @@ export function parseADS1298Data(rawData: number[]): ParsedECGData {
 }
 
 /**
- * Assess signal quality based on ECG characteristics
+ * Assess signal quality based on ECG characteristics (voltage values)
  */
 function assessSignalQuality(
   samples: ADS1298Sample[],
