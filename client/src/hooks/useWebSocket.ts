@@ -77,6 +77,14 @@ export function useWebSocket() {
               console.log('Lead data keys:', Object.keys(leadData));
               console.log('Lead I data length:', leadData['Lead I']?.length || 0);
               console.log('Lead II data length:', leadData['Lead II']?.length || 0);
+              
+              // Check actual voltage values
+              if (leadData['Lead I']?.length > 0) {
+                console.log('Lead I sample values:', leadData['Lead I'].slice(-5)); // Last 5 values
+              }
+              if (leadData['Lead II']?.length > 0) {
+                console.log('Lead II sample values:', leadData['Lead II'].slice(-5)); // Last 5 values
+              }
             } catch (parseError) {
               console.error('Failed to parse ADS1298 data:', parseError);
             }
