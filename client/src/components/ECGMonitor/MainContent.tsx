@@ -144,11 +144,11 @@ export function MainContent({
   const getLogLevelColor = (level: string) => {
     switch (level) {
       case "error":
-        return "text-red-500";
+        return "text-foreground font-semibold";
       case "warning":
-        return "text-yellow-500";
+        return "text-muted-foreground font-medium";
       case "info":
-        return "text-green-500";
+        return "text-muted-foreground";
       default:
         return "text-muted-foreground";
     }
@@ -179,7 +179,7 @@ export function MainContent({
                   {/* Heart Rate Display */}
                   <div className="text-center sm:text-right">
                     <p className="text-xs text-muted-foreground">Heart Rate</p>
-                    <p className="text-2xl font-bold text-red-500">
+                    <p className="text-2xl font-bold text-foreground">
                       {heartRate} BPM
                     </p>
                   </div>
@@ -189,7 +189,7 @@ export function MainContent({
                     {!isRecording ? (
                       <Button
                         onClick={onStartRecording}
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-primary hover:bg-primary/80"
                         disabled={!currentPatient || bleStatus !== "connected"}
                       >
                         <Play className="h-4 w-4 mr-2" />
@@ -197,11 +197,11 @@ export function MainContent({
                       </Button>
                     ) : (
                       <>
-                        <Button onClick={onStopRecording} variant="destructive">
+                        <Button onClick={onStopRecording} className="bg-muted-foreground hover:bg-muted-foreground/80 text-background">
                           <Square className="h-4 w-4 mr-2" />
                           Stop Recording
                         </Button>
-                        <Badge variant="destructive" className="animate-pulse">
+                        <Badge className="animate-pulse bg-muted-foreground text-background">
                           Recording
                         </Badge>
                       </>
@@ -263,7 +263,7 @@ export function MainContent({
           </h3>
           <ScrollArea className="h-24">
             <div className="space-y-1">
-              {systemLogs.slice(0, 10).map((log: any) => (
+              {(systemLogs as any[]).slice(0, 10).map((log: any) => (
                 <div
                   key={log.id}
                   className="text-xs font-mono flex items-center space-x-2"

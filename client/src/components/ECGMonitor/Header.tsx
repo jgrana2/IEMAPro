@@ -22,11 +22,11 @@ export function Header({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "connected":
-        return "text-green-500";
+        return "text-foreground";
       case "connecting":
-        return "text-yellow-500";
+        return "text-muted-foreground";
       default:
-        return "text-red-500";
+        return "text-muted-foreground/50";
     }
   };
 
