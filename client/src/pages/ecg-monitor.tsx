@@ -164,13 +164,13 @@ export default function ECGMonitor() {
           >
             <div className="flex items-center justify-between p-2 border-b bg-background">
               <div className="flex items-center gap-2">
-                <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
+                <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                 <h3 className="text-sm font-medium">AI-Assisted Diagnosis</h3>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setAiPanelExpanded(!aiPanelExpanded)}
-                  className="p-1 hover:bg-gray-100 rounded transition-colors"
+                  className="p-1 hover:bg-muted rounded transition-colors"
                 >
                   {aiPanelExpanded ? "−" : "+"}
                 </button>

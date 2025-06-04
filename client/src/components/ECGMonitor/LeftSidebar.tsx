@@ -228,7 +228,7 @@ export function LeftSidebar({
                                       </p>
                                     </div>
                                   </div>
-                                  <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                                  <Badge variant="default" className="bg-primary hover:bg-primary/80">
                                     Active
                                   </Badge>
                                 </div>
@@ -240,7 +240,7 @@ export function LeftSidebar({
                                   }}
                                   variant="outline"
                                   size="sm"
-                                  className="w-full border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+                                  className="w-full"
                                 >
                                   <Unplug className="h-3 w-3 mr-1" />
                                   Disconnect Device

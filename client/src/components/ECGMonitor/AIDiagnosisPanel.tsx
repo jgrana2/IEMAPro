@@ -209,7 +209,7 @@ export function AIDiagnosisPanel({
                 >
                   {message.role === "assistant" && (
                     <Avatar className="h-6 w-6 sm:h-8 sm:w-8 flex-shrink-0">
-                      <AvatarFallback className="bg-blue-100 text-blue-600">
+                      <AvatarFallback className="bg-muted text-muted-foreground">
                         <Bot className="h-3 w-3 sm:h-4 sm:w-4" />
                       </AvatarFallback>
                     </Avatar>
@@ -248,7 +248,7 @@ export function AIDiagnosisPanel({
 
                         {message.analysis.abnormalities.length > 0 && (
                           <div>
-                            <div className="flex items-center gap-1 text-xs font-medium text-orange-600">
+                            <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
                               <AlertTriangle className="h-3 w-3" />
                               Detected Abnormalities:
                             </div>
@@ -259,7 +259,7 @@ export function AIDiagnosisPanel({
                                     key={index}
                                     className="flex items-start gap-1"
                                   >
-                                    <span className="text-orange-500">•</span>
+                                    <span className="text-muted-foreground">•</span>
                                     <span className="break-words">
                                       {abnormality}
                                     </span>
@@ -272,7 +272,7 @@ export function AIDiagnosisPanel({
 
                         {message.analysis.recommendations.length > 0 && (
                           <div>
-                            <div className="text-xs font-medium text-blue-600">
+                            <div className="text-xs font-medium text-foreground">
                               Recommendations:
                             </div>
                             <ul className="text-xs mt-1 space-y-1">
@@ -282,7 +282,7 @@ export function AIDiagnosisPanel({
                                     key={index}
                                     className="flex items-start gap-1"
                                   >
-                                    <span className="text-blue-500">•</span>
+                                    <span className="text-foreground">•</span>
                                     <span className="break-words">
                                       {recommendation}
                                     </span>
