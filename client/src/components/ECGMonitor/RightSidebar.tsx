@@ -237,7 +237,7 @@ export function RightSidebar({
             // Collapsed Icons
             <div className="p-2 space-y-3">
               <div className="flex flex-col items-center space-y-4">
-                <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center text-white text-xs">
+                <div className="w-8 h-8 bg-white border rounded flex items-center justify-center text-black text-xs">
                   {isRecording ? (
                     <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
                   ) : (

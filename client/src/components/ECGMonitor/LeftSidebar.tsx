@@ -181,13 +181,17 @@ export function LeftSidebar({
                   <Label className="text-sm font-medium text-foreground">
                     BLE ECG Device
                   </Label>
-                  
+
                   {/* Unified Scan & Connect Button */}
                   <Button
                     onClick={onScanDevices}
                     className="w-full"
-                    variant={bleStatus === "connected" ? "secondary" : "outline"}
-                    disabled={bleStatus === "connecting" || bleStatus === "connected"}
+                    variant={
+                      bleStatus === "connected" ? "secondary" : "outline"
+                    }
+                    disabled={
+                      bleStatus === "connecting" || bleStatus === "connected"
+                    }
                   >
                     {bleStatus === "connecting" ? (
                       <>
@@ -211,7 +215,8 @@ export function LeftSidebar({
                   {bleStatus === "connected" && (
                     <Card className="border-muted bg-muted/20 dark:border-muted-foreground dark:bg-muted/10">
                       <CardContent className="p-3 space-y-3">
-                        {bleDevices.filter((device: any) => device.isConnected).length > 0 ? (
+                        {bleDevices.filter((device: any) => device.isConnected)
+                          .length > 0 ? (
                           bleDevices
                             .filter((device: any) => device.isConnected)
                             .map((device: any) => (
@@ -228,13 +233,20 @@ export function LeftSidebar({
                                       </p>
                                     </div>
                                   </div>
-                                  <Badge variant="default" className="bg-primary hover:bg-primary/80">
+                                  <Badge
+                                    variant="default"
+                                    className="bg-primary hover:bg-primary/80"
+                                  >
                                     Active
                                   </Badge>
                                 </div>
                                 <Button
                                   onClick={() => {
-                                    if (window.confirm("Are you sure you want to disconnect this device?")) {
+                                    if (
+                                      window.confirm(
+                                        "Are you sure you want to disconnect this device?",
+                                      )
+                                    ) {
                                       onDisconnectDevice();
                                     }
                                   }}
@@ -261,13 +273,20 @@ export function LeftSidebar({
                                   </p>
                                 </div>
                               </div>
-                              <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                              <Badge
+                                variant="default"
+                                className="bg-green-500 hover:bg-green-600"
+                              >
                                 Active
                               </Badge>
                             </div>
                             <Button
                               onClick={() => {
-                                if (window.confirm("Are you sure you want to disconnect this device?")) {
+                                if (
+                                  window.confirm(
+                                    "Are you sure you want to disconnect this device?",
+                                  )
+                                ) {
                                   onDisconnectDevice();
                                 }
                               }}
@@ -308,7 +327,8 @@ export function LeftSidebar({
                                         {device.name}
                                       </p>
                                       <p className="text-xs text-muted-foreground">
-                                        Tap to connect • RSSI: {device.rssi || "N/A"} dBm
+                                        Tap to connect • RSSI:{" "}
+                                        {device.rssi || "N/A"} dBm
                                       </p>
                                     </div>
                                   </div>
@@ -318,8 +338,7 @@ export function LeftSidebar({
                                 </div>
                               </CardContent>
                             </Card>
-                          ))
-                        }
+                          ))}
                       </div>
                     </div>
                   )}
@@ -389,7 +408,7 @@ export function LeftSidebar({
                     <div className="flex space-x-2">
                       <Button
                         onClick={handleConnectWebSocket}
-                        className="flex-1 bg-green-600 hover:bg-green-700"
+                        className="flex-1 bg-white text-black border hover:bg-green-700"
                         disabled={wsStatus === "connected"}
                       >
                         Connect
