@@ -196,7 +196,7 @@ export function LeftSidebar({
                       </>
                     ) : bleStatus === "connected" ? (
                       <>
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse mr-2" />
+                        <div className="w-2 h-2 rounded-full bg-foreground animate-pulse mr-2" />
                         Device Connected
                       </>
                     ) : (
@@ -209,7 +209,7 @@ export function LeftSidebar({
 
                   {/* Connected Device Display */}
                   {bleStatus === "connected" && (
-                    <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20">
+                    <Card className="border-muted bg-muted/20 dark:border-muted-foreground dark:bg-muted/10">
                       <CardContent className="p-3 space-y-3">
                         {bleDevices.filter((device: any) => device.isConnected).length > 0 ? (
                           bleDevices
@@ -218,12 +218,12 @@ export function LeftSidebar({
                               <div key={device.id} className="space-y-2">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center space-x-2">
-                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                    <div className="w-2 h-2 rounded-full bg-foreground animate-pulse" />
                                     <div>
-                                      <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                                      <p className="text-sm font-medium text-foreground">
                                         {device.name}
                                       </p>
-                                      <p className="text-xs text-green-600 dark:text-green-400">
+                                      <p className="text-xs text-muted-foreground">
                                         Signal: {device.rssi || "Strong"} dBm
                                       </p>
                                     </div>

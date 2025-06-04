@@ -74,6 +74,8 @@ export function MainContent({
     queryKey: ["/api/system-logs"],
     refetchInterval: 2000, // Refresh logs every 2 seconds
   });
+  
+  const typedSystemLogs = systemLogs as any[];
 
   // Heart rate now comes from real ADS1298 data via WebSocket
 
@@ -263,7 +265,7 @@ export function MainContent({
           </h3>
           <ScrollArea className="h-24">
             <div className="space-y-1">
-              {(systemLogs as any[]).slice(0, 10).map((log: any) => (
+              {typedSystemLogs.slice(0, 10).map((log: any) => (
                 <div
                   key={log.id}
                   className="text-xs font-mono flex items-center space-x-2"
@@ -276,7 +278,7 @@ export function MainContent({
                   </span>
                 </div>
               ))}
-              {systemLogs.length === 0 && (
+              {typedSystemLogs.length === 0 && (
                 <div className="text-xs text-muted-foreground font-mono">
                   No system messages available.
                 </div>

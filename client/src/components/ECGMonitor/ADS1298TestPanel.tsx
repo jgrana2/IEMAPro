@@ -9,19 +9,19 @@ export function ADS1298TestPanel() {
 
   const getQualityColor = (quality: string) => {
     switch (quality) {
-      case 'good': return 'bg-green-500';
-      case 'poor': return 'bg-yellow-500';
-      case 'noise': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case 'good': return 'bg-foreground';
+      case 'poor': return 'bg-muted-foreground';
+      case 'noise': return 'bg-muted-foreground/50';
+      default: return 'bg-muted';
     }
   };
 
   const getConnectionColor = (status: string) => {
     switch (status) {
-      case 'connected': return 'bg-green-500';
-      case 'connecting': return 'bg-yellow-500';
-      case 'disconnected': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case 'connected': return 'bg-foreground';
+      case 'connecting': return 'bg-muted-foreground';
+      case 'disconnected': return 'bg-muted-foreground/50';
+      default: return 'bg-muted';
     }
   };
 
