@@ -55,32 +55,32 @@ export function ADS1298TestPanel() {
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <Heart className="w-4 h-4 text-red-500" />
+              <Heart className="w-4 h-4 text-foreground" />
               <span className="text-sm font-medium">Heart Rate</span>
             </div>
-            <div className="text-2xl font-bold text-red-600">{heartRate}</div>
-            <div className="text-xs text-gray-500">BPM</div>
+            <div className="text-2xl font-bold text-foreground">{heartRate}</div>
+            <div className="text-xs text-muted-foreground">BPM</div>
           </div>
           
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <Activity className="w-4 h-4 text-blue-500" />
+              <Activity className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium">Signal Quality</span>
             </div>
-            <Badge className={`${getQualityColor(signalQuality)} text-white`}>
+            <Badge className={`${getQualityColor(signalQuality)} text-background`}>
               {signalQuality.toUpperCase()}
             </Badge>
           </div>
 
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
-              <TrendingUp className="w-4 h-4 text-green-500" />
+              <TrendingUp className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium">Active Leads</span>
             </div>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-foreground">
               {Object.keys(ecgData).length}
             </div>
-            <div className="text-xs text-gray-500">of 12</div>
+            <div className="text-xs text-muted-foreground">of 12</div>
           </div>
         </div>
 
@@ -90,12 +90,12 @@ export function ADS1298TestPanel() {
             <h4 className="text-sm font-medium">Live ECG Leads Data:</h4>
             <div className="grid grid-cols-3 gap-2 text-xs">
               {Object.entries(ecgData).slice(0, 6).map(([leadName, data]) => (
-                <div key={leadName} className="bg-gray-50 p-2 rounded">
+                <div key={leadName} className="bg-muted p-2 rounded">
                   <div className="font-medium">{leadName}</div>
-                  <div className="text-gray-600">
+                  <div className="text-muted-foreground">
                     {data.length} samples
                   </div>
-                  <div className="text-blue-600">
+                  <div className="text-foreground">
                     {data[data.length - 1]?.toFixed(2) || 0} mV
                   </div>
                 </div>

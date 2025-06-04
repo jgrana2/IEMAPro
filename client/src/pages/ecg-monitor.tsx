@@ -187,8 +187,8 @@ export default function ECGMonitor() {
                 </div>
                 {/* Draggable handle */}
                 <div
-                  className={`absolute top-0 left-0 right-0 h-1 bg-gray-200 hover:bg-blue-400 transition-colors cursor-row-resize border-t-2 border-gray-300 ${
-                    isDragging ? "bg-blue-500" : ""
+                  className={`absolute top-0 left-0 right-0 h-1 bg-muted hover:bg-muted-foreground/50 transition-colors cursor-row-resize border-t-2 border-border ${
+                    isDragging ? "bg-muted-foreground" : ""
                   }`}
                   onMouseDown={handleMouseDown}
                   title="Drag to resize panel"
