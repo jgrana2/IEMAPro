@@ -23,8 +23,8 @@
   /* #E4E4E7 */
   --input: 0 0% 89%;
   /* #E4E4E7 */
-  --primary: 0 0% 25%;
-  /* #404040 */
+  --primary: 210 100% 20%;
+  /* #003366 - Deep blue to match IEMA logo */
   --primary-foreground: 0 0% 98%;
   /* #FAFAFA */
   --secondary: 0 0% 96%;
@@ -42,6 +42,10 @@
   --ring: 0 0% 25%;
   /* #404040 */
   --radius: 0.5rem;
+  
+  /* Logo-specific colors */
+  --logo-primary: 210 100% 20%;
+  /* Extracted from IEMA logo */
 
   /* Medical-specific grayscale colors */
   --medical-primary: 0 0% 25%;
@@ -85,8 +89,8 @@
   /* #333333 */
   --input: 0 0% 20%;
   /* #333333 */
-  --primary: 0 0% 75%;
-  /* #BFBFBF */
+  --primary: 210 80% 60%;
+  /* #3399CC - Lighter blue for dark mode */
   --primary-foreground: 0 0% 9%;
   /* #171717 */
   --secondary: 0 0% 15%;
