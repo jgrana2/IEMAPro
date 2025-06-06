@@ -5,6 +5,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Heart, Menu, History, Bluetooth, Wifi } from "lucide-react";
+import logoImage from "@assets/IEMAlogo.png";
 
 interface HeaderProps {
   onToggleLeft: () => void;
@@ -62,7 +63,7 @@ export function Header({
 
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <img src="/IEMAlogo.png" alt="IEMA Pro Logo" className="w-6 h-6" />
+            <img src={logoImage} alt="IEMA Pro Logo" className="w-6 h-6" />
           </div>
           <div>
             <h1 className="text-lg font-semibold text-foreground">IEMA Pro</h1>
