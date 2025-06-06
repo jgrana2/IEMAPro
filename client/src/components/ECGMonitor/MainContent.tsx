@@ -198,7 +198,7 @@ export function MainContent({
                     {!isRecording ? (
                       <Button
                         onClick={onStartRecording}
-                        className="bg-red-500 hover:bg-red-600 text-background"
+                        className="bg-primary text-background"
                         disabled={!currentPatient || bleStatus !== "connected"}
                       >
                         <Play className="h-4 w-4 mr-2" />

@@ -23,7 +23,7 @@
   /* #E4E4E7 */
   --input: 0 0% 89%;
   /* #E4E4E7 */
-  --primary: 210 100% 20%;
+  --primary: 196 47% 45%;
   /* #003366 - Deep blue to match IEMA logo */
   --primary-foreground: 0 0% 98%;
   /* #FAFAFA */
@@ -42,7 +42,7 @@
   --ring: 0 0% 25%;
   /* #404040 */
   --radius: 0.5rem;
-  
+
   /* Logo-specific colors */
   --logo-primary: 210 100% 20%;
   /* Extracted from IEMA logo */

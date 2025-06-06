@@ -416,7 +416,7 @@ export function LeftSidebar({
                       <Button
                         onClick={handleDisconnectWebSocket}
                         variant="destructive"
-                        className="flex-1"
+                        className="flex-1 bg-primary"
                         disabled={wsStatus === "disconnected"}
                       >
                         Disconnect
