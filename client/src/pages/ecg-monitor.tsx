@@ -14,16 +14,22 @@ export default function ECGMonitor() {
   const { leftExpanded, rightExpanded, toggleLeft, toggleRight } =
     useSidebarState();
   const { wsStatus, sendMessage } = useWebSocket();
-  
+
   const [currentPatient, setCurrentPatient] = useState<any>(null);
   const [currentSession, setCurrentSession] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [ecgData, setEcgData] = useState<{ [leadName: string]: number[] }>({});
   const [heartRate, setHeartRate] = useState(0);
-  const [signalQuality, setSignalQuality] = useState<'good' | 'poor' | 'noise'>('poor');
+  const [signalQuality, setSignalQuality] = useState<"good" | "poor" | "noise">(
+    "poor",
+  );
 
   // Handle ECG data from BLE directly
-  const handleECGData = (leadData: { [leadName: string]: number[] }, hr: number, quality: string) => {
+  const handleECGData = (
+    leadData: { [leadName: string]: number[] },
+    hr: number,
+    quality: string,
+  ) => {
     // Update ECG data buffer with rolling window
     const maxBufferSize = 2500; // Keep ~5 seconds at 500Hz
     const newBuffer = { ...ecgData };
@@ -32,10 +38,10 @@ export default function ECGMonitor() {
       if (!newBuffer[leadName]) {
         newBuffer[leadName] = [];
       }
-      
+
       // Append new samples
       newBuffer[leadName] = [...newBuffer[leadName], ...newSamples];
-      
+
       // Keep only the most recent samples
       if (newBuffer[leadName].length > maxBufferSize) {
         newBuffer[leadName] = newBuffer[leadName].slice(-maxBufferSize);
@@ -44,14 +50,17 @@ export default function ECGMonitor() {
 
     setEcgData(newBuffer);
     setHeartRate(hr);
-    setSignalQuality(quality as 'good' | 'poor' | 'noise');
-    
-    console.log(`ECG data updated: Lead I samples: ${newBuffer['Lead I']?.length || 0}, HR: ${hr}, Quality: ${quality}`);
+    setSignalQuality(quality as "good" | "poor" | "noise");
+
+    console.log(
+      `ECG data updated: Lead I samples: ${newBuffer["Lead I"]?.length || 0}, HR: ${hr}, Quality: ${quality}`,
+    );
   };
 
-  const { bleStatus, devices, scanDevices, connectDevice, disconnectDevice } = useBluetooth({ 
-    onECGData: handleECGData 
-  });
+  const { bleStatus, devices, scanDevices, connectDevice, disconnectDevice } =
+    useBluetooth({
+      onECGData: handleECGData,
+    });
   const [aiPanelExpanded, setAiPanelExpanded] = useState(true);
   const [aiPanelHeight, setAiPanelHeight] = useState(400);
   const [isDragging, setIsDragging] = useState(false);
@@ -162,7 +171,7 @@ export default function ECGMonitor() {
               height: aiPanelExpanded ? `${aiPanelHeight}px` : "48px",
             }}
           >
-            <div className="flex items-center justify-between p-2 border-b bg-background">
+            <div className="flex items-center justify-between p-2 border-b bg-white">
               <div className="flex items-center gap-2">
                 <Bot className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                 <h3 className="text-sm font-medium">AI-Assisted Diagnosis</h3>
@@ -187,7 +196,7 @@ export default function ECGMonitor() {
                 </div>
                 {/* Draggable handle */}
                 <div
-                  className={`absolute top-0 left-0 right-0 h-1 bg-muted hover:bg-muted-foreground/50 transition-colors cursor-row-resize border-t-2 border-border ${
+                  className={`absolute top-0 left-0 right-0 h-1 bg-white hover:bg-muted transition-colors cursor-row-resize border-t-1 border-border ${
                     isDragging ? "bg-muted-foreground" : ""
                   }`}
                   onMouseDown={handleMouseDown}

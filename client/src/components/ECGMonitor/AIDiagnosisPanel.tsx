@@ -101,7 +101,10 @@ export function AIDiagnosisPanel({
     // Send to AI for analysis
     analyzeWithAI({
       message: inputValue,
-      ecgData: Object.keys(ecgData).length > 0 ? Object.values(ecgData).flat().slice(-100) : undefined, // Send last 100 data points
+      ecgData:
+        Object.keys(ecgData).length > 0
+          ? Object.values(ecgData).flat().slice(-100)
+          : undefined, // Send last 100 data points
     });
 
     setInputValue("");
@@ -162,7 +165,7 @@ export function AIDiagnosisPanel({
 
   return (
     <div className="h-full flex flex-col bg-background">
-      <div className="flex flex-row border-b px-3 sm:px-6 py-3 flex-shrink-0">
+      <div className="flex flex-row border-b px-3 sm:px-6 py-3 flex-shrink-0 bg-white">
         <div className="flex flex-row w-full sm:items-center justify-between gap-2">
           <div className="flex items-center w-full justify-between gap-2 flex-wrap">
             {currentPatient && (
@@ -196,7 +199,7 @@ export function AIDiagnosisPanel({
       </div>
       <div className="flex-1 min-h-0 flex flex-col">
         {/* Messages Area - Fixed height with scroll */}
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 bg-white">
           <ScrollArea className="h-full px-2 sm:px-4" ref={scrollAreaRef}>
             <div className="space-y-3 py-2">
               {messages.map((message) => (
@@ -259,7 +262,9 @@ export function AIDiagnosisPanel({
                                     key={index}
                                     className="flex items-start gap-1"
                                   >
-                                    <span className="text-muted-foreground">•</span>
+                                    <span className="text-muted-foreground">
+                                      •
+                                    </span>
                                     <span className="break-words">
                                       {abnormality}
                                     </span>
@@ -332,7 +337,7 @@ export function AIDiagnosisPanel({
         </div>
 
         {/* Input Area - Pinned to bottom */}
-        <div className="p-2 flex-shrink-0 min-h">
+        <div className="p-2 flex-shrink-0 min-h bg-white border-t">
           <div className="flex gap-2">
             <Input
               value={inputValue}
