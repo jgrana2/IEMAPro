@@ -63,7 +63,11 @@ export function Header({
 
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <img src={logoImage} alt="IEMA Pro Logo" className="w-6 h-6" />
+            <img
+              src={logoImage}
+              alt="IEMA Pro Logo"
+              className="w-8 h-8 rounded"
+            />
           </div>
           <div>
             <h1 className="text-lg font-semibold text-foreground">IEMA Pro</h1>
