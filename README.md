@@ -1,6 +1,6 @@
 # ECG Monitor - Medical IoT Device Management System
 
-A comprehensive medical ECG monitoring system designed for real-time IoT Holter device integration and medical data management. Built with modern web technologies for healthcare professionals requiring precise cardiac monitoring capabilities.
+A comprehensive medical ECG monitoring system designed for real-time IoT Holter device integration and medical data management.
 
 ## 🩺 Features
 
@@ -140,7 +140,7 @@ A comprehensive medical ECG monitoring system designed for real-time IoT Holter 
 - For Chrome: `chrome://flags/#enable-web-bluetooth`
 
 ### AI Configuration
-- Obtain Anthropic API key from console.anthropic.com
+- Obtain API key from provider
 - Add key to environment variables
 - Configure analysis parameters in `server/ai-diagnosis.ts`
 
