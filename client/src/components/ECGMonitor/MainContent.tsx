@@ -172,7 +172,7 @@ export function MainContent({
             <div className="space-y-4">
               {/* Main Header Row */}
               <div className="flex flex-col lg:flex-row items-center justify-between gap-4 text-center sm:text-left">
-                <div className="flex-1">
+                <div className="flex-1 text-center sm:text-left">
                   <CardTitle className="text-lg mb-1">
                     12-Lead ECG Monitoring
                   </CardTitle>
