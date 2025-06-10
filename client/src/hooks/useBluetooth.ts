@@ -4,6 +4,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   parseADS1298DataRaw,
   parseADS1298SingleChannel,
+  parseADS1298SingleChannelRaw,
   convertToECGFormat,
   calculateHeartRateFromSamples,
   calculateHeartRateFromChannel,
@@ -208,7 +209,10 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
                         try {
                           // Parse single channel data (28 samples of 24-bit values)
                           const rawData = Array.from(data);
-                          const channelSamples = parseADS1298SingleChannel(rawData, channelNumber);
+                          // Use raw ADC values for channel 1 (Lead I), processed values for others
+                          const channelSamples = channelNumber === 1 
+                            ? parseADS1298SingleChannelRaw(rawData, channelNumber)
+                            : parseADS1298SingleChannel(rawData, channelNumber);
 
                           if (channelSamples.length > 0) {
                             // Map channel data to appropriate ECG lead

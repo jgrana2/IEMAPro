@@ -101,6 +101,44 @@ export function parseADS1298SingleChannel(rawData: number[], channelNumber: numb
 }
 
 /**
+ * Parse single channel ADS1298 ECG data with raw ADC values (no preprocessing)
+ * @param rawData - Array of bytes (should be 84 bytes = 28 samples * 3 bytes each)
+ * @param channelNumber - Channel number (1-8 corresponding to characteristics 8171-8178)
+ */
+export function parseADS1298SingleChannelRaw(rawData: number[], channelNumber: number): number[] {
+  if (!rawData || rawData.length === 0) {
+    console.warn(`No data provided for channel ${channelNumber}`);
+    return [];
+  }
+
+  const samples: number[] = [];
+  const sampleCount = Math.floor(rawData.length / 3);
+
+  console.log(`Processing Channel ${channelNumber} (RAW): ${rawData.length} bytes as ${sampleCount} samples`);
+
+  for (let i = 0; i < sampleCount; i++) {
+    const startIndex = i * 3;
+    if (startIndex + 2 < rawData.length) {
+      const b0 = rawData[startIndex];
+      const b1 = rawData[startIndex + 1];
+      const b2 = rawData[startIndex + 2];
+
+      // Parse 24-bit signed integer from 3 bytes using proper sign extension
+      const rawValue = parse24BitSigned(b0, b1, b2);
+      
+      // Use raw ADC value directly without any preprocessing
+      samples.push(rawValue);
+    }
+  }
+
+  console.log(`Channel ${channelNumber} (RAW): Parsed ${samples.length} raw ADC samples`);
+  if (samples.length > 0) {
+    console.log(`Channel ${channelNumber} (RAW): Sample range: ${Math.min(...samples)} to ${Math.max(...samples)}`);
+  }
+  return samples;
+}
+
+/**
  * Parse ADS1298 ECG data packet with raw ADC values (no voltage conversion or quality assessment)
  * Format: Each sample is 3 bytes (24-bit), two's complement, MSB first
  */

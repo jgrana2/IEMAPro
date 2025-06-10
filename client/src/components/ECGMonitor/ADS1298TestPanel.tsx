@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Activity, Heart, TrendingUp, Wifi, Play, Square, TestTube } from "lucide-react";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { parseADS1298SingleChannel, calculateHeartRateFromChannel, assessChannelQuality } from "@/lib/ads1298-parser";
+import { parseADS1298SingleChannel, parseADS1298SingleChannelRaw, calculateHeartRateFromChannel, assessChannelQuality } from "@/lib/ads1298-parser";
 
 interface ADS1298TestPanelProps {
   onTestData?: (leadData: { [leadName: string]: number[] }, hr: number, quality: string) => void;
@@ -136,8 +136,10 @@ export function ADS1298TestPanel({ onTestData }: ADS1298TestPanelProps) {
       const rawData = generateChannelData(channelNumber);
       console.log(`Testing Channel ${channelNumber}: ${rawData.length} bytes`);
       
-      // Parse the channel data
-      const channelSamples = parseADS1298SingleChannel(rawData, channelNumber);
+      // Parse the channel data - use raw for channel 1 (Lead I), processed for others
+      const channelSamples = channelNumber === 1 
+        ? parseADS1298SingleChannelRaw(rawData, channelNumber)
+        : parseADS1298SingleChannel(rawData, channelNumber);
       const heartRate = calculateHeartRateFromChannel(channelSamples);
       const quality = assessChannelQuality(channelSamples);
       
