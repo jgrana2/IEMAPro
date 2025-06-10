@@ -12,6 +12,8 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const offsetRef = useRef(0);
+  const lastDataLengthRef = useRef(0);
+  const lastUpdateTimeRef = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -76,6 +78,19 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
     const drawECG = () => {
       if (!isActive) return;
 
+      const currentTime = Date.now();
+      const hasNewData = data.length !== lastDataLengthRef.current;
+      const timeSinceLastUpdate = currentTime - lastUpdateTimeRef.current;
+      
+      // Only redraw if there's new data or enough time has passed (reduce flickering)
+      if (!hasNewData && timeSinceLastUpdate < 100) {
+        animationRef.current = requestAnimationFrame(drawECG);
+        return;
+      }
+
+      lastDataLengthRef.current = data.length;
+      lastUpdateTimeRef.current = currentTime;
+
       // Clear canvas
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
       
@@ -95,39 +110,40 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
         const amplitude = canvasHeight * 0.35; // Amplitude for ECG display
         
         // Use the most recent data points for real-time display
-        const displayPoints = Math.min(canvasWidth, data.length);
+        const displayPoints = Math.min(canvasWidth * 2, data.length);
         const startIndex = Math.max(0, data.length - displayPoints);
         const displayData = data.slice(startIndex);
         
-        // Calculate proper scaling for ECG data (voltage values)
+        // Calculate proper scaling for ECG voltage data
         const minValue = Math.min(...displayData);
         const maxValue = Math.max(...displayData);
         const range = maxValue - minValue;
         
-        // ECG-specific scaling - handle voltage values properly
+        // ECG-specific scaling for voltage values (mV)
         let scaleFactor = 1;
         if (range > 0) {
-          // For ECG voltage data, use a scale that works well with typical amplitudes
+          // Scale based on typical ECG voltage ranges
           if (range < 0.1) {
-            scaleFactor = 10; // Amplify small signals
-          } else if (range > 5) {
-            scaleFactor = 0.2; // Reduce large signals
+            scaleFactor = 50; // Very small signals
+          } else if (range < 1.0) {
+            scaleFactor = 20; // Small signals  
+          } else if (range < 3.0) {
+            scaleFactor = 10; // Normal ECG range
           } else {
-            scaleFactor = 2 / range;
+            scaleFactor = 3 / range; // Large signals
           }
         }
         
-        // Draw the ECG waveform
+        // Draw the ECG waveform smoothly
         for (let i = 0; i < displayData.length; i++) {
           const x = (i / displayData.length) * canvasWidth;
           const rawValue = displayData[i];
           
-          // Center the signal around the baseline
+          // Center around baseline and apply scaling
           const baselineValue = (minValue + maxValue) / 2;
           const normalizedValue = (rawValue - baselineValue) * scaleFactor;
           
-          // Clamp the y value to prevent overflow
-          const y = Math.max(0, Math.min(canvasHeight, centerY - (normalizedValue * amplitude)));
+          const y = Math.max(5, Math.min(canvasHeight - 5, centerY - (normalizedValue * amplitude)));
           
           if (i === 0) {
             ctx.moveTo(x, y);
@@ -137,17 +153,6 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
         }
         
         ctx.stroke();
-        
-        // Add a real-time sweep line
-        if (data.length > 50) {
-          const sweepX = canvasWidth - 2; // Show at the right edge for real-time
-          ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(sweepX, 0);
-          ctx.lineTo(sweepX, canvasHeight);
-          ctx.stroke();
-        }
         
       } else {
         // Draw baseline when no data

@@ -136,17 +136,16 @@ export function parseADS1298DataRaw(rawData: number[]): ParsedECGData {
       // Use raw ADC values directly (no voltage conversion)
       const rawValue = signedValue;
 
-      // For now, treat as Lead I data and calculate derived leads using raw values
-      const leadI = rawValue;
-      const leadII = rawValue * 0.85 + Math.sin(i * 0.1) * 1000; // Some variation for visualization
-
+      // Use actual ECG data from the device without artificial patterns
+      const voltage = adcToVoltage(rawValue, 12); // Convert to voltage for proper ECG display
+      
       const sample: ADS1298Sample = {
-        leadI,
-        leadII,
-        leadIII: leadII - leadI, // Standard ECG calculation
-        aVR: -(leadI + leadII) / 2,
-        aVL: leadI - leadII / 2,
-        aVF: leadII - leadI / 2,
+        leadI: voltage,
+        leadII: voltage, // Use real data, not synthetic
+        leadIII: 0, // Will be calculated from actual channels when available
+        aVR: 0,
+        aVL: 0,
+        aVF: 0,
         V1: 0,
         V2: 0,
         V3: 0,
