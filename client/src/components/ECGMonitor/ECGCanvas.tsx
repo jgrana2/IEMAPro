@@ -92,36 +92,44 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
         ctx.beginPath();
         
         const centerY = canvasHeight / 2;
-        const amplitude = canvasHeight * 0.4; // More pronounced amplitude
+        const amplitude = canvasHeight * 0.35; // Amplitude for ECG display
         
-        // Enhanced scaling for better visualization
-        const recentData = data.slice(-Math.min(data.length, canvasWidth * 3));
-        const minValue = Math.min(...recentData);
-        const maxValue = Math.max(...recentData);
+        // Use the most recent data points for real-time display
+        const displayPoints = Math.min(canvasWidth, data.length);
+        const startIndex = Math.max(0, data.length - displayPoints);
+        const displayData = data.slice(startIndex);
+        
+        // Calculate proper scaling for ECG data (voltage values)
+        const minValue = Math.min(...displayData);
+        const maxValue = Math.max(...displayData);
         const range = maxValue - minValue;
         
-        // Use adaptive scaling
+        // ECG-specific scaling - handle voltage values properly
         let scaleFactor = 1;
         if (range > 0) {
-          // Scale based on the data range to fill the canvas height appropriately
-          scaleFactor = 2 / range; // Adjust multiplier for better visibility
+          // For ECG voltage data, use a scale that works well with typical amplitudes
+          if (range < 0.1) {
+            scaleFactor = 10; // Amplify small signals
+          } else if (range > 5) {
+            scaleFactor = 0.2; // Reduce large signals
+          } else {
+            scaleFactor = 2 / range;
+          }
         }
         
-        // Draw sweeping ECG trace
-        const samplesPerPixel = Math.max(1, Math.floor(data.length / canvasWidth));
-        
-        for (let x = 0; x < canvasWidth; x++) {
-          // Calculate which data point to use for this pixel
-          const dataIndex = Math.floor((offsetRef.current + x * samplesPerPixel) % data.length);
-          const rawValue = data[dataIndex] || 0;
+        // Draw the ECG waveform
+        for (let i = 0; i < displayData.length; i++) {
+          const x = (i / displayData.length) * canvasWidth;
+          const rawValue = displayData[i];
           
-          // Normalize and scale the value
+          // Center the signal around the baseline
           const baselineValue = (minValue + maxValue) / 2;
           const normalizedValue = (rawValue - baselineValue) * scaleFactor;
           
-          const y = centerY - (normalizedValue * amplitude);
+          // Clamp the y value to prevent overflow
+          const y = Math.max(0, Math.min(canvasHeight, centerY - (normalizedValue * amplitude)));
           
-          if (x === 0) {
+          if (i === 0) {
             ctx.moveTo(x, y);
           } else {
             ctx.lineTo(x, y);
@@ -130,10 +138,10 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
         
         ctx.stroke();
         
-        // Add a sweeping line effect to show real-time data
-        if (data.length > 100) {
-          const sweepX = (offsetRef.current / samplesPerPixel) % canvasWidth;
-          ctx.strokeStyle = 'rgba(239, 68, 68, 0.3)';
+        // Add a real-time sweep line
+        if (data.length > 50) {
+          const sweepX = canvasWidth - 2; // Show at the right edge for real-time
+          ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(sweepX, 0);
@@ -141,13 +149,11 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
           ctx.stroke();
         }
         
-        // Update offset for smooth animation
-        offsetRef.current = (offsetRef.current + 2) % data.length;
       } else {
         // Draw baseline when no data
         ctx.beginPath();
-        ctx.moveTo(0, canvasHeight / 2);
-        ctx.lineTo(canvasWidth, canvasHeight / 2);
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(canvasWidth, centerY);
         ctx.strokeStyle = '#EF4444';
         ctx.lineWidth = 1;
         ctx.stroke();
