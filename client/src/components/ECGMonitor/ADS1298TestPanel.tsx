@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Activity, Heart, TrendingUp, Wifi, Play, Square } from "lucide-react";
+import { Activity, Heart, TrendingUp, Wifi, Play, Square, TestTube } from "lucide-react";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { parseADS1298SingleChannel, calculateHeartRateFromChannel, assessChannelQuality } from "@/lib/ads1298-parser";
 
 interface ADS1298TestPanelProps {
   onTestData?: (leadData: { [leadName: string]: number[] }, hr: number, quality: string) => void;
@@ -82,6 +83,85 @@ export function ADS1298TestPanel({ onTestData }: ADS1298TestPanelProps) {
   const handleTestToggle = () => {
     setIsGeneratingTest(!isGeneratingTest);
   };
+
+  // Test the fixed ADS1298 parser with realistic channel data
+  const testADS1298Parser = useCallback(() => {
+    // Generate realistic 24-bit ECG data (28 samples * 3 bytes = 84 bytes per channel)
+    const generateChannelData = (channelNumber: number): number[] => {
+      const rawData: number[] = [];
+      
+      // Generate 28 samples of 24-bit ECG data
+      for (let i = 0; i < 28; i++) {
+        // Simulate realistic ECG values for different channels
+        let baseValue = 0;
+        
+        switch (channelNumber) {
+          case 1: // Lead I
+            baseValue = 8000000 + Math.sin(i * 0.3) * 500000;
+            break;
+          case 2: // Lead II  
+            baseValue = 8200000 + Math.sin(i * 0.3 + 0.5) * 600000;
+            break;
+          case 3: // Lead III
+            baseValue = 7800000 + Math.sin(i * 0.3 + 1.0) * 400000;
+            break;
+          default:
+            baseValue = 8000000 + Math.sin(i * 0.3 + channelNumber * 0.2) * 300000;
+        }
+        
+        // Add some noise
+        baseValue += (Math.random() - 0.5) * 50000;
+        
+        // Ensure it's within 24-bit signed range
+        baseValue = Math.max(-8388608, Math.min(8388607, Math.round(baseValue)));
+        
+        // Convert to 3-byte representation (MSB first)
+        const byte0 = (baseValue >> 16) & 0xFF;
+        const byte1 = (baseValue >> 8) & 0xFF;
+        const byte2 = baseValue & 0xFF;
+        
+        rawData.push(byte0, byte1, byte2);
+      }
+      
+      return rawData;
+    };
+
+    // Test parsing for multiple channels
+    const testChannels = [1, 2, 3, 4]; // Test first 4 channels
+    const allLeadData: { [leadName: string]: number[] } = {};
+    
+    console.log("=== Testing Fixed ADS1298 Parser ===");
+    
+    testChannels.forEach(channelNumber => {
+      const rawData = generateChannelData(channelNumber);
+      console.log(`Testing Channel ${channelNumber}: ${rawData.length} bytes`);
+      
+      // Parse the channel data
+      const channelSamples = parseADS1298SingleChannel(rawData, channelNumber);
+      const heartRate = calculateHeartRateFromChannel(channelSamples);
+      const quality = assessChannelQuality(channelSamples);
+      
+      console.log(`Channel ${channelNumber} results:`, {
+        samples: channelSamples.length,
+        heartRate,
+        quality,
+        sampleRange: [Math.min(...channelSamples), Math.max(...channelSamples)]
+      });
+      
+      // Map to ECG leads
+      const leadNames = ['Lead I', 'Lead II', 'Lead III', 'aVR', 'aVL', 'aVF', 'V1', 'V2'];
+      const leadName = leadNames[channelNumber - 1] || `Channel ${channelNumber}`;
+      allLeadData[leadName] = channelSamples;
+    });
+    
+    // Send to callback if available
+    if (onTestData && Object.keys(allLeadData).length > 0) {
+      const avgHeartRate = 75;
+      onTestData(allLeadData, avgHeartRate, 'good');
+    }
+    
+    console.log("=== Parser Test Complete ===");
+  }, [onTestData]);
 
   const getQualityColor = (quality: string) => {
     switch (quality) {
@@ -164,24 +244,35 @@ export function ADS1298TestPanel({ onTestData }: ADS1298TestPanelProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-medium">ECG Data Generator:</h4>
-            <Button
-              onClick={handleTestToggle}
-              variant={isGeneratingTest ? "destructive" : "default"}
-              size="sm"
-              className="flex items-center gap-2"
-            >
-              {isGeneratingTest ? (
-                <>
-                  <Square className="w-4 h-4" />
-                  Stop Test
-                </>
-              ) : (
-                <>
-                  <Play className="w-4 h-4" />
-                  Generate Test Data
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={testADS1298Parser}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <TestTube className="w-4 h-4" />
+                Test Parser
+              </Button>
+              <Button
+                onClick={handleTestToggle}
+                variant={isGeneratingTest ? "destructive" : "default"}
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                {isGeneratingTest ? (
+                  <>
+                    <Square className="w-4 h-4" />
+                    Stop Test
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4" />
+                    Generate Test Data
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
           {isGeneratingTest && (
             <Alert>

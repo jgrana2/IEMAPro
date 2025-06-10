@@ -31,29 +31,17 @@ interface BluetoothHookProps {
 const TARGET_ADDRESS = "6614D41F-1CB3-77FA-3E35-C5A446EA4E3F";
 // Convert short UUIDs to full 128-bit format for Web Bluetooth API
 const TARGET_SERVICE_UUID = "0000805b-0000-1000-8000-00805f9b34fb";
-const TARGET_CHARACTERISTIC_UUIDS = ["00008171-0000-1000-8000-00805f9b34fb"];
-
-// 24-bit data processing function for characteristic 8171
-const process24BitData = (dataBytes: Uint8Array): number[] => {
-  const dataArray: number[] = [];
-  for (let index = 0; index < dataBytes.length; index += 3) {
-    if (index + 3 <= dataBytes.length) {
-      const byte1 = dataBytes[index];
-      const byte2 = dataBytes[index + 1];
-      const byte3 = dataBytes[index + 2];
-
-      let value24bit = (byte1 << 16) | (byte2 << 8) | byte3;
-
-      // Handle two's complement for negative values
-      if (value24bit & 0x800000) {
-        value24bit = value24bit - 0x1000000;
-      }
-
-      dataArray.push(value24bit);
-    }
-  }
-  return dataArray;
-};
+// All ADS1298 ECG channels (8171-8178)
+const TARGET_CHARACTERISTIC_UUIDS = [
+  "00008171-0000-1000-8000-00805f9b34fb", // Channel 1
+  "00008172-0000-1000-8000-00805f9b34fb", // Channel 2
+  "00008173-0000-1000-8000-00805f9b34fb", // Channel 3
+  "00008174-0000-1000-8000-00805f9b34fb", // Channel 4
+  "00008175-0000-1000-8000-00805f9b34fb", // Channel 5
+  "00008176-0000-1000-8000-00805f9b34fb", // Channel 6
+  "00008177-0000-1000-8000-00805f9b34fb", // Channel 7
+  "00008178-0000-1000-8000-00805f9b34fb", // Channel 8
+];
 
 // Extended channel configuration (for devices with more channels)
 const EXTENDED_CHANNEL_UUIDS = {
