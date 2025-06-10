@@ -3,8 +3,11 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   parseADS1298DataRaw,
+  parseADS1298SingleChannel,
   convertToECGFormat,
   calculateHeartRateFromSamples,
+  calculateHeartRateFromChannel,
+  assessChannelQuality,
   type ParsedECGData,
 } from "@/lib/ads1298-parser";
 
@@ -199,52 +202,65 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
                         `BLE data from ${targetCharUUID}: ${data.length} bytes`,
                       );
 
-                      // Special handling for characteristic 8171 with 24-bit data processing
-                      if (
-                        targetCharUUID ===
-                        "00008171-0000-1000-8000-00805f9b34fb"
-                      ) {
+                      // Handle single-channel ADS1298 ECG data for characteristics 8171-8178
+                      const characteristicUuid = targetCharUUID.toLowerCase();
+                      const channelMap: { [key: string]: number } = {
+                        "00008171-0000-1000-8000-00805f9b34fb": 1, // Channel 1
+                        "00008172-0000-1000-8000-00805f9b34fb": 2, // Channel 2
+                        "00008173-0000-1000-8000-00805f9b34fb": 3, // Channel 3
+                        "00008174-0000-1000-8000-00805f9b34fb": 4, // Channel 4
+                        "00008175-0000-1000-8000-00805f9b34fb": 5, // Channel 5
+                        "00008176-0000-1000-8000-00805f9b34fb": 6, // Channel 6
+                        "00008177-0000-1000-8000-00805f9b34fb": 7, // Channel 7
+                        "00008178-0000-1000-8000-00805f9b34fb": 8, // Channel 8
+                      };
+
+                      const channelNumber = channelMap[characteristicUuid];
+                      if (channelNumber) {
                         try {
-                          // Process 24-bit data for characteristic 8171
-                          const processedData = process24BitData(data);
-                          console.log(`Data: ${processedData}`);
-                          console.log(
-                            `Processed ${processedData.length} 24-bit values from characteristic 8171`,
-                          );
+                          // Parse single channel data (28 samples of 24-bit values)
+                          const rawData = Array.from(data);
+                          const channelSamples = parseADS1298SingleChannel(rawData, channelNumber);
 
-                          // Convert to ECG format for visualization
-                          if (processedData.length > 0) {
-                            // For now, map the single channel data to Lead I
-                            // In a real multi-channel device, you'd parse multiple leads
-                            const leadData: { [leadName: string]: number[] } = {
-                              "Lead I": processedData,
-                              "Lead II": processedData.map(
-                                (v) =>
-                                  v * 0.8 + Math.sin(Date.now() * 0.001) * 100,
-                              ), // Simulated Lead II
-                              "Lead III": processedData.map(
-                                (v) =>
-                                  v * 0.6 + Math.cos(Date.now() * 0.001) * 80,
-                              ), // Simulated Lead III
-                              aVR: processedData.map((v) => -v * 0.5),
-                              aVL: processedData.map((v) => v * 0.3),
-                              aVF: processedData.map((v) => v * 0.7),
-                              V1: processedData.map((v) => v * 0.9),
-                              V2: processedData.map((v) => v * 1.1),
-                              V3: processedData.map((v) => v * 1.2),
-                              V4: processedData.map((v) => v * 1.0),
-                              V5: processedData.map((v) => v * 0.8),
-                              V6: processedData.map((v) => v * 0.6),
-                            };
+                          if (channelSamples.length > 0) {
+                            // Map channel data to appropriate ECG lead
+                            const leadData: { [leadName: string]: number[] } = {};
+                            
+                            // Map ADS1298 channels to standard ECG leads
+                            switch (channelNumber) {
+                              case 1:
+                                leadData["Lead I"] = channelSamples;
+                                break;
+                              case 2:
+                                leadData["Lead II"] = channelSamples;
+                                break;
+                              case 3:
+                                leadData["Lead III"] = channelSamples;
+                                break;
+                              case 4:
+                                leadData["aVR"] = channelSamples;
+                                break;
+                              case 5:
+                                leadData["aVL"] = channelSamples;
+                                break;
+                              case 6:
+                                leadData["aVF"] = channelSamples;
+                                break;
+                              case 7:
+                                leadData["V1"] = channelSamples;
+                                break;
+                              case 8:
+                                leadData["V2"] = channelSamples;
+                                break;
+                              default:
+                                leadData[`Channel ${channelNumber}`] = channelSamples;
+                            }
 
-                            // Calculate heart rate from signal peaks
-                            const heartRate =
-                              calculateSimpleHeartRate(processedData);
-                            const quality = assessDataQuality(processedData);
+                            // Calculate heart rate and assess quality for this channel
+                            const heartRate = calculateHeartRateFromChannel(channelSamples);
+                            const quality = assessChannelQuality(channelSamples);
 
-                            console.log(
-                              `Sending ECG data - Lead I: ${processedData.length} samples, HR: ${heartRate}, Quality: ${quality}`,
-                            );
+                            console.log(`Channel ${channelNumber}: ${channelSamples.length} samples, HR: ${heartRate}, Quality: ${quality}`);
 
                             // Send processed data to callback
                             if (onECGData) {
@@ -253,7 +269,7 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
                           }
                         } catch (parseError) {
                           console.error(
-                            "Failed to process 24-bit BLE ECG data:",
+                            `Failed to process Channel ${channelNumber} ECG data:`,
                             parseError,
                           );
                         }

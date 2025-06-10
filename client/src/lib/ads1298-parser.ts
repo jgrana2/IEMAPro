@@ -54,6 +54,50 @@ function adcToVoltage(adcValue: number, gain: number = 12): number {
 }
 
 /**
+ * Parse single channel ADS1298 ECG data from BLE characteristic
+ * Each characteristic (8171-8178) contains 28 samples of 24-bit data for one channel
+ * @param rawData - Array of bytes (should be 84 bytes = 28 samples * 3 bytes each)
+ * @param channelNumber - Channel number (1-8 corresponding to characteristics 8171-8178)
+ */
+export function parseADS1298SingleChannel(rawData: number[], channelNumber: number): number[] {
+  if (!rawData || rawData.length === 0) {
+    console.warn(`No data provided for channel ${channelNumber}`);
+    return [];
+  }
+
+  // Expected: 28 samples * 3 bytes = 84 bytes
+  const expectedBytes = 28 * 3;
+  if (rawData.length !== expectedBytes) {
+    console.warn(`Channel ${channelNumber}: Expected ${expectedBytes} bytes, got ${rawData.length} bytes`);
+  }
+
+  const samples: number[] = [];
+  const sampleCount = Math.floor(rawData.length / 3);
+
+  console.log(`Processing Channel ${channelNumber}: ${rawData.length} bytes as ${sampleCount} samples`);
+
+  for (let i = 0; i < sampleCount; i++) {
+    const startIndex = i * 3;
+    if (startIndex + 2 < rawData.length) {
+      const b0 = rawData[startIndex];
+      const b1 = rawData[startIndex + 1];
+      const b2 = rawData[startIndex + 2];
+
+      // Combine 3 bytes into 24-bit value (MSB first)
+      const combined = (b0 << 16) | (b1 << 8) | b2;
+
+      // Sign extension for 24-bit two's complement
+      const signedValue = (combined << 8) >> 8;
+
+      samples.push(signedValue);
+    }
+  }
+
+  console.log(`Channel ${channelNumber}: Parsed ${samples.length} raw ADC values`);
+  return samples;
+}
+
+/**
  * Parse ADS1298 ECG data packet with raw ADC values (no voltage conversion or quality assessment)
  * Format: Each sample is 3 bytes (24-bit), two's complement, MSB first
  */
@@ -300,4 +344,60 @@ export function calculateHeartRateFromSamples(
   const avgRRSeconds = avgRRInterval / sampleRate;
 
   return Math.round(60 / avgRRSeconds); // Convert to BPM
+}
+
+/**
+ * Calculate heart rate from single channel ECG data
+ */
+export function calculateHeartRateFromChannel(channelData: number[]): number {
+  if (channelData.length < 2) return 75;
+
+  // Find R-peaks (simplified peak detection)
+  const peaks: number[] = [];
+  const maxValue = Math.max(...channelData);
+  const minValue = Math.min(...channelData);
+  const threshold = minValue + (maxValue - minValue) * 0.6;
+  
+  for (let i = 1; i < channelData.length - 1; i++) {
+    if (channelData[i] > channelData[i-1] && 
+        channelData[i] > channelData[i+1] && 
+        channelData[i] > threshold) {
+      peaks.push(i);
+    }
+  }
+  
+  if (peaks.length < 2) return 75;
+  
+  // Calculate RR intervals
+  const intervals = [];
+  for (let i = 1; i < peaks.length; i++) {
+    intervals.push(peaks[i] - peaks[i-1]);
+  }
+  
+  const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+  const sampleRate = 250; // ADS1298 sample rate
+  const heartRate = Math.round((60 * sampleRate) / avgInterval);
+  
+  // Clamp to reasonable range
+  return Math.max(40, Math.min(200, heartRate));
+}
+
+/**
+ * Assess signal quality for single channel data
+ */
+export function assessChannelQuality(channelData: number[]): "good" | "poor" | "noise" {
+  if (channelData.length === 0) return "poor";
+
+  const mean = channelData.reduce((a, b) => a + b, 0) / channelData.length;
+  const variance = channelData.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / channelData.length;
+  const stdDev = Math.sqrt(variance);
+  const maxAmplitude = Math.max(...channelData.map(Math.abs));
+
+  if (maxAmplitude > 50000 || stdDev > 20000) {
+    return "noise"; // Too much noise or artifact
+  } else if (maxAmplitude < 1000 || stdDev < 100) {
+    return "poor"; // Signal too weak or flat
+  }
+
+  return "good";
 }
