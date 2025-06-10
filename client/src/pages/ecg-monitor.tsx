@@ -159,6 +159,7 @@ export default function ECGMonitor() {
               ecgData={ecgData}
               heartRate={heartRate}
               signalQuality={signalQuality}
+              onTestData={handleECGData}
             />
           </div>
 

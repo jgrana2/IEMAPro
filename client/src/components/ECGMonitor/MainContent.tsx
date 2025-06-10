@@ -282,6 +282,11 @@ export function MainContent({
             />
           </CardContent>
         </Card>
+
+        {/* ADS1298 Test Panel */}
+        <div className="mt-4">
+          <ADS1298TestPanel onTestData={onTestData} />
+        </div>
       </div>
 
       {/* System Logs */}
