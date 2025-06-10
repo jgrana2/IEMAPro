@@ -1,7 +1,12 @@
 import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { parseADS1298DataRaw, convertToECGFormat, calculateHeartRateFromSamples, type ParsedECGData } from "@/lib/ads1298-parser";
+import {
+  parseADS1298DataRaw,
+  convertToECGFormat,
+  calculateHeartRateFromSamples,
+  type ParsedECGData,
+} from "@/lib/ads1298-parser";
 
 interface BluetoothDevice {
   id: string;
@@ -12,16 +17,18 @@ interface BluetoothDevice {
 }
 
 interface BluetoothHookProps {
-  onECGData?: (ecgData: { [leadName: string]: number[] }, heartRate: number, quality: string) => void;
+  onECGData?: (
+    ecgData: { [leadName: string]: number[] },
+    heartRate: number,
+    quality: string,
+  ) => void;
 }
 
 // BLE Configuration for ECG Device
 const TARGET_ADDRESS = "6614D41F-1CB3-77FA-3E35-C5A446EA4E3F";
 // Convert short UUIDs to full 128-bit format for Web Bluetooth API
 const TARGET_SERVICE_UUID = "0000805b-0000-1000-8000-00805f9b34fb";
-const TARGET_CHARACTERISTIC_UUIDS = [
-  "00008171-0000-1000-8000-00805f9b34fb"
-];
+const TARGET_CHARACTERISTIC_UUIDS = ["00008171-0000-1000-8000-00805f9b34fb"];
 
 // 24-bit data processing function for characteristic 8171
 const process24BitData = (dataBytes: Uint8Array): number[] => {
@@ -31,32 +38,30 @@ const process24BitData = (dataBytes: Uint8Array): number[] => {
       const byte1 = dataBytes[index];
       const byte2 = dataBytes[index + 1];
       const byte3 = dataBytes[index + 2];
-      
+
       let value24bit = (byte1 << 16) | (byte2 << 8) | byte3;
-      
+
       // Handle two's complement for negative values
       if (value24bit & 0x800000) {
         value24bit = value24bit - 0x1000000;
       }
-      
+
       dataArray.push(value24bit);
     }
   }
   return dataArray;
 };
 
-
-
 // Extended channel configuration (for devices with more channels)
 const EXTENDED_CHANNEL_UUIDS = {
   1: "00008171-0000-1000-8000-00805f9b34fb",
-  2: "00008172-0000-1000-8000-00805f9b34fb", 
+  2: "00008172-0000-1000-8000-00805f9b34fb",
   3: "00008173-0000-1000-8000-00805f9b34fb",
   4: "00008174-0000-1000-8000-00805f9b34fb",
   5: "00008175-0000-1000-8000-00805f9b34fb",
   6: "00008176-0000-1000-8000-00805f9b34fb",
   7: "00008177-0000-1000-8000-00805f9b34fb",
-  8: "00008178-0000-1000-8000-00805f9b34fb"
+  8: "00008178-0000-1000-8000-00805f9b34fb",
 };
 
 export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
@@ -72,267 +77,348 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
   // Simple heart rate calculation from ECG signal peaks
   const calculateSimpleHeartRate = useCallback((data: number[]): number => {
     if (data.length < 100) return 75; // Default if insufficient data
-    
+
     // Find peaks in the signal
     const peaks: number[] = [];
     const threshold = Math.max(...data) * 0.6; // 60% of max amplitude
-    
+
     for (let i = 1; i < data.length - 1; i++) {
-      if (data[i] > data[i - 1] && data[i] > data[i + 1] && data[i] > threshold) {
+      if (
+        data[i] > data[i - 1] &&
+        data[i] > data[i + 1] &&
+        data[i] > threshold
+      ) {
         peaks.push(i);
       }
     }
-    
+
     if (peaks.length < 2) return 75;
-    
+
     // Calculate average interval between peaks
     const intervals = [];
     for (let i = 1; i < peaks.length; i++) {
       intervals.push(peaks[i] - peaks[i - 1]);
     }
-    
+
     const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
     const sampleRate = 500; // Assumed sample rate in Hz
     const heartRate = Math.round((60 * sampleRate) / avgInterval);
-    
+
     // Clamp to reasonable range
     return Math.max(40, Math.min(200, heartRate));
   }, []);
 
   // Assess data quality based on signal characteristics
-  const assessDataQuality = useCallback((data: number[]): "good" | "poor" | "noise" => {
-    if (data.length === 0) return "poor";
-    
-    const mean = data.reduce((a, b) => a + b, 0) / data.length;
-    const variance = data.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / data.length;
-    const stdDev = Math.sqrt(variance);
-    const maxAmplitude = Math.max(...data.map(Math.abs));
-    
-    if (maxAmplitude > 50000 || stdDev > 20000) {
-      return "noise"; // Too much noise or artifact
-    } else if (maxAmplitude < 1000 || stdDev < 100) {
-      return "poor"; // Signal too weak or flat
-    }
-    
-    return "good";
-  }, []);
+  const assessDataQuality = useCallback(
+    (data: number[]): "good" | "poor" | "noise" => {
+      if (data.length === 0) return "poor";
+
+      const mean = data.reduce((a, b) => a + b, 0) / data.length;
+      const variance =
+        data.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) /
+        data.length;
+      const stdDev = Math.sqrt(variance);
+      const maxAmplitude = Math.max(...data.map(Math.abs));
+
+      if (maxAmplitude > 50000 || stdDev > 20000) {
+        return "noise"; // Too much noise or artifact
+      } else if (maxAmplitude < 1000 || stdDev < 100) {
+        return "poor"; // Signal too weak or flat
+      }
+
+      return "good";
+    },
+    [],
+  );
 
   // Function to enable notifications for ECG channels
-  const enableECGNotifications = useCallback(async (gattServer: any) => {
-    const enabledChannels: string[] = [];
-    
-    try {
-      console.log("Discovering services for ECG device...");
-      
-      // Try to connect to the specific ECG service
+  const enableECGNotifications = useCallback(
+    async (gattServer: any) => {
+      const enabledChannels: string[] = [];
+
       try {
-        const ecgService = await gattServer.getPrimaryService(TARGET_SERVICE_UUID);
-        console.log(`Found ECG service: ${TARGET_SERVICE_UUID}`);
-        
-        // Get all characteristics in the ECG service
-        const characteristics = await ecgService.getCharacteristics();
-        console.log(`ECG service has ${characteristics.length} characteristics`);
-        
-        // Enable notifications for target characteristics
-        for (const targetCharUUID of TARGET_CHARACTERISTIC_UUIDS) {
-          try {
-            // Find the characteristic by UUID
-            let targetCharacteristic = null;
-            for (const char of characteristics) {
-              if (char.uuid.includes(targetCharUUID.toLowerCase()) || 
-                  char.uuid.toLowerCase().includes(targetCharUUID.toLowerCase())) {
-                targetCharacteristic = char;
-                break;
+        console.log("Discovering services for ECG device...");
+
+        // Try to connect to the specific ECG service
+        try {
+          const ecgService =
+            await gattServer.getPrimaryService(TARGET_SERVICE_UUID);
+          console.log(`Found ECG service: ${TARGET_SERVICE_UUID}`);
+
+          // Get all characteristics in the ECG service
+          const characteristics = await ecgService.getCharacteristics();
+          console.log(
+            `ECG service has ${characteristics.length} characteristics`,
+          );
+
+          // Enable notifications for target characteristics
+          for (const targetCharUUID of TARGET_CHARACTERISTIC_UUIDS) {
+            try {
+              // Find the characteristic by UUID
+              let targetCharacteristic = null;
+              for (const char of characteristics) {
+                if (
+                  char.uuid.includes(targetCharUUID.toLowerCase()) ||
+                  char.uuid.toLowerCase().includes(targetCharUUID.toLowerCase())
+                ) {
+                  targetCharacteristic = char;
+                  break;
+                }
               }
-            }
-            
-            if (!targetCharacteristic) {
-              // Try to get characteristic directly
-              targetCharacteristic = await ecgService.getCharacteristic(targetCharUUID);
-            }
-            
-            if (targetCharacteristic) {
-              console.log(`Found characteristic: ${targetCharacteristic.uuid}`);
-              
-              // Check if notifications are supported
-              if (targetCharacteristic.properties.notify || targetCharacteristic.properties.indicate) {
-                // Enable notifications
-                await targetCharacteristic.startNotifications();
-                console.log(`Notifications enabled for characteristic ${targetCharUUID}`);
-                
-                // Add event listener for ECG data
-                targetCharacteristic.addEventListener('characteristicvaluechanged', (event: any) => {
-                  const value = event.target.value;
-                  const data = new Uint8Array(value.buffer);
-                  
-                  console.log(`BLE data from ${targetCharUUID}: ${data.length} bytes`);
-                  
-                  // Special handling for characteristic 8171 with 24-bit data processing
-                  if (targetCharUUID === "00008171-0000-1000-8000-00805f9b34fb") {
-                    try {
-                      // Process 24-bit data for characteristic 8171
-                      const processedData = process24BitData(data);
-                      console.log(`Processed ${processedData.length} 24-bit values from characteristic 8171`);
-                      
-                      // Convert to ECG format for visualization
-                      if (processedData.length > 0) {
-                        // For now, map the single channel data to Lead I
-                        // In a real multi-channel device, you'd parse multiple leads
-                        const leadData: { [leadName: string]: number[] } = {
-                          'Lead I': processedData,
-                          'Lead II': processedData.map(v => v * 0.8 + Math.sin(Date.now() * 0.001) * 100), // Simulated Lead II
-                          'Lead III': processedData.map(v => v * 0.6 + Math.cos(Date.now() * 0.001) * 80), // Simulated Lead III
-                          'aVR': processedData.map(v => -v * 0.5),
-                          'aVL': processedData.map(v => v * 0.3),
-                          'aVF': processedData.map(v => v * 0.7),
-                          'V1': processedData.map(v => v * 0.9),
-                          'V2': processedData.map(v => v * 1.1),
-                          'V3': processedData.map(v => v * 1.2),
-                          'V4': processedData.map(v => v * 1.0),
-                          'V5': processedData.map(v => v * 0.8),
-                          'V6': processedData.map(v => v * 0.6)
-                        };
-                        
-                        // Calculate heart rate from signal peaks
-                        const heartRate = calculateSimpleHeartRate(processedData);
-                        const quality = assessDataQuality(processedData);
-                        
-                        console.log(`Sending ECG data - Lead I: ${processedData.length} samples, HR: ${heartRate}, Quality: ${quality}`);
-                        
-                        // Send processed data to callback
-                        if (onECGData) {
-                          onECGData(leadData, heartRate, quality);
-                        }
-                      }
-                    } catch (parseError) {
-                      console.error('Failed to process 24-bit BLE ECG data:', parseError);
-                    }
-                  } else {
-                    // Fallback to original ADS1298 parser for other characteristics
-                    const rawData = Array.from(data);
-                    try {
-                      if (rawData.length === 84) { // Full ADS1298 packet
-                        const parsedData: ParsedECGData = parseADS1298DataRaw(rawData);
-                        const leadData = convertToECGFormat(parsedData);
-                        const heartRate = calculateHeartRateFromSamples(parsedData.samples, parsedData.sampleRate);
-                        
-                        console.log(`Parsed ${parsedData.samples.length} ECG samples from BLE`);
-                        console.log(`Lead I data: ${leadData['Lead I']?.length || 0} samples`);
-                        
-                        // Send processed data to callback
-                        if (onECGData) {
-                          onECGData(leadData, heartRate, parsedData.quality);
+
+              if (!targetCharacteristic) {
+                // Try to get characteristic directly
+                targetCharacteristic =
+                  await ecgService.getCharacteristic(targetCharUUID);
+              }
+
+              if (targetCharacteristic) {
+                console.log(
+                  `Found characteristic: ${targetCharacteristic.uuid}`,
+                );
+
+                // Check if notifications are supported
+                if (
+                  targetCharacteristic.properties.notify ||
+                  targetCharacteristic.properties.indicate
+                ) {
+                  // Enable notifications
+                  await targetCharacteristic.startNotifications();
+                  console.log(
+                    `Notifications enabled for characteristic ${targetCharUUID}`,
+                  );
+
+                  // Add event listener for ECG data
+                  targetCharacteristic.addEventListener(
+                    "characteristicvaluechanged",
+                    (event: any) => {
+                      const value = event.target.value;
+                      const data = new Uint8Array(value.buffer);
+
+                      console.log(
+                        `BLE data from ${targetCharUUID}: ${data.length} bytes`,
+                      );
+
+                      // Special handling for characteristic 8171 with 24-bit data processing
+                      if (
+                        targetCharUUID ===
+                        "00008171-0000-1000-8000-00805f9b34fb"
+                      ) {
+                        try {
+                          // Process 24-bit data for characteristic 8171
+                          const processedData = process24BitData(data);
+                          console.log(`Data: ${processedData}`);
+                          console.log(
+                            `Processed ${processedData.length} 24-bit values from characteristic 8171`,
+                          );
+
+                          // Convert to ECG format for visualization
+                          if (processedData.length > 0) {
+                            // For now, map the single channel data to Lead I
+                            // In a real multi-channel device, you'd parse multiple leads
+                            const leadData: { [leadName: string]: number[] } = {
+                              "Lead I": processedData,
+                              "Lead II": processedData.map(
+                                (v) =>
+                                  v * 0.8 + Math.sin(Date.now() * 0.001) * 100,
+                              ), // Simulated Lead II
+                              "Lead III": processedData.map(
+                                (v) =>
+                                  v * 0.6 + Math.cos(Date.now() * 0.001) * 80,
+                              ), // Simulated Lead III
+                              aVR: processedData.map((v) => -v * 0.5),
+                              aVL: processedData.map((v) => v * 0.3),
+                              aVF: processedData.map((v) => v * 0.7),
+                              V1: processedData.map((v) => v * 0.9),
+                              V2: processedData.map((v) => v * 1.1),
+                              V3: processedData.map((v) => v * 1.2),
+                              V4: processedData.map((v) => v * 1.0),
+                              V5: processedData.map((v) => v * 0.8),
+                              V6: processedData.map((v) => v * 0.6),
+                            };
+
+                            // Calculate heart rate from signal peaks
+                            const heartRate =
+                              calculateSimpleHeartRate(processedData);
+                            const quality = assessDataQuality(processedData);
+
+                            console.log(
+                              `Sending ECG data - Lead I: ${processedData.length} samples, HR: ${heartRate}, Quality: ${quality}`,
+                            );
+
+                            // Send processed data to callback
+                            if (onECGData) {
+                              onECGData(leadData, heartRate, quality);
+                            }
+                          }
+                        } catch (parseError) {
+                          console.error(
+                            "Failed to process 24-bit BLE ECG data:",
+                            parseError,
+                          );
                         }
                       } else {
-                        console.log(`Received ${rawData.length} bytes - not a full ADS1298 packet`);
+                        // Fallback to original ADS1298 parser for other characteristics
+                        const rawData = Array.from(data);
+                        try {
+                          if (rawData.length === 84) {
+                            // Full ADS1298 packet
+                            const parsedData: ParsedECGData =
+                              parseADS1298DataRaw(rawData);
+                            const leadData = convertToECGFormat(parsedData);
+                            const heartRate = calculateHeartRateFromSamples(
+                              parsedData.samples,
+                              parsedData.sampleRate,
+                            );
+
+                            console.log(
+                              `Parsed ${parsedData.samples.length} ECG samples from BLE`,
+                            );
+                            console.log(
+                              `Lead I data: ${leadData["Lead I"]?.length || 0} samples`,
+                            );
+
+                            // Send processed data to callback
+                            if (onECGData) {
+                              onECGData(
+                                leadData,
+                                heartRate,
+                                parsedData.quality,
+                              );
+                            }
+                          } else {
+                            console.log(
+                              `Received ${rawData.length} bytes - not a full ADS1298 packet`,
+                            );
+                          }
+                        } catch (parseError) {
+                          console.error(
+                            "Failed to parse BLE ECG data:",
+                            parseError,
+                          );
+                        }
                       }
-                    } catch (parseError) {
-                      console.error('Failed to parse BLE ECG data:', parseError);
-                    }
-                  }
-                });
-                
-                enabledChannels.push(targetCharUUID);
-              } else {
-                console.warn(`Characteristic ${targetCharUUID} does not support notifications`);
+                    },
+                  );
+
+                  enabledChannels.push(targetCharUUID);
+                } else {
+                  console.warn(
+                    `Characteristic ${targetCharUUID} does not support notifications`,
+                  );
+                }
               }
+            } catch (charError) {
+              console.warn(
+                `Failed to setup characteristic ${targetCharUUID}:`,
+                charError,
+              );
             }
-          } catch (charError) {
-            console.warn(`Failed to setup characteristic ${targetCharUUID}:`, charError);
           }
+        } catch (serviceError) {
+          console.error(
+            `ECG service ${TARGET_SERVICE_UUID} not found:`,
+            serviceError,
+          );
+
+          // Fallback: Try to discover all services
+          const services = await gattServer.getPrimaryServices();
+          console.log(
+            "Available services:",
+            services.map((s: any) => s.uuid),
+          );
+
+          toast({
+            title: "Service Discovery",
+            description: `Found ${services.length} services. Check console for details.`,
+          });
         }
-        
-      } catch (serviceError) {
-        console.error(`ECG service ${TARGET_SERVICE_UUID} not found:`, serviceError);
-        
-        // Fallback: Try to discover all services
-        const services = await gattServer.getPrimaryServices();
-        console.log("Available services:", services.map((s: any) => s.uuid));
-        
+      } catch (error) {
+        console.error("Error during ECG setup:", error);
+      }
+
+      if (enabledChannels.length > 0) {
         toast({
-          title: "Service Discovery",
-          description: `Found ${services.length} services. Check console for details.`,
+          title: "ECG Notifications Active",
+          description: `Enabled ${enabledChannels.length} ECG characteristics: ${enabledChannels.join(", ")}`,
+        });
+      } else {
+        toast({
+          title: "ECG Setup Issue",
+          description:
+            "Unable to enable ECG notifications. Verify device compatibility.",
+          variant: "destructive",
         });
       }
-      
-    } catch (error) {
-      console.error("Error during ECG setup:", error);
-    }
-    
-    if (enabledChannels.length > 0) {
-      toast({
-        title: "ECG Notifications Active",
-        description: `Enabled ${enabledChannels.length} ECG characteristics: ${enabledChannels.join(', ')}`,
-      });
-    } else {
-      toast({
-        title: "ECG Setup Issue", 
-        description: "Unable to enable ECG notifications. Verify device compatibility.",
-        variant: "destructive"
-      });
-    }
-    
-    return enabledChannels;
-  }, [toast]);
+
+      return enabledChannels;
+    },
+    [toast],
+  );
 
   // Handle device disconnection events
-  const handleDeviceDisconnection = useCallback(async (deviceId: string, deviceName: string) => {
-    // Prevent duplicate disconnection handling
-    if (isDisconnecting || bleStatus === "disconnected") {
-      return;
-    }
-    
-    setIsDisconnecting(true);
-    console.log(`Device ${deviceName} (${deviceId}) disconnected`);
-    
-    // Update local state
-    setDevices((prev) =>
-      prev.map((d) =>
-        d.id === deviceId ? { ...d, isConnected: false } : d,
-      ),
-    );
-    
-    if (connectedDevice?.id === deviceId) {
-      setConnectedDevice(null);
-    }
-    
-    setBleStatus("disconnected");
+  const handleDeviceDisconnection = useCallback(
+    async (deviceId: string, deviceName: string) => {
+      // Prevent duplicate disconnection handling
+      if (isDisconnecting || bleStatus === "disconnected") {
+        return;
+      }
 
-    // Update backend
-    try {
-      await apiRequest(
-        "PATCH",
-        `/api/ble-devices/device/${deviceId}`,
-        { isConnected: false }
+      setIsDisconnecting(true);
+      console.log(`Device ${deviceName} (${deviceId}) disconnected`);
+
+      // Update local state
+      setDevices((prev) =>
+        prev.map((d) => (d.id === deviceId ? { ...d, isConnected: false } : d)),
       );
-      
-      // Invalidate cache to refresh device list
-      queryClient.invalidateQueries({ queryKey: ["/api/ble-devices"] });
-    } catch (error) {
-      console.warn("Failed to update device disconnection in backend:", error);
-    }
 
-    toast({
-      title: "Device Disconnected",
-      description: `${deviceName} has been disconnected.`,
-      variant: "destructive",
-    });
-    
-    // Reset disconnecting flag after a short delay
-    setTimeout(() => setIsDisconnecting(false), 1000);
-  }, [connectedDevice, toast, queryClient, isDisconnecting, bleStatus]);
+      if (connectedDevice?.id === deviceId) {
+        setConnectedDevice(null);
+      }
+
+      setBleStatus("disconnected");
+
+      // Update backend
+      try {
+        await apiRequest("PATCH", `/api/ble-devices/device/${deviceId}`, {
+          isConnected: false,
+        });
+
+        // Invalidate cache to refresh device list
+        queryClient.invalidateQueries({ queryKey: ["/api/ble-devices"] });
+      } catch (error) {
+        console.warn(
+          "Failed to update device disconnection in backend:",
+          error,
+        );
+      }
+
+      toast({
+        title: "Device Disconnected",
+        description: `${deviceName} has been disconnected.`,
+        variant: "destructive",
+      });
+
+      // Reset disconnecting flag after a short delay
+      setTimeout(() => setIsDisconnecting(false), 1000);
+    },
+    [connectedDevice, toast, queryClient, isDisconnecting, bleStatus],
+  );
 
   // Monitor connection status periodically
   useEffect(() => {
     const monitorConnection = () => {
       if (connectedDevice && connectedDevice.bluetoothDevice) {
-        const isStillConnected = connectedDevice.bluetoothDevice.gatt?.connected;
-        
+        const isStillConnected =
+          connectedDevice.bluetoothDevice.gatt?.connected;
+
         if (!isStillConnected && bleStatus === "connected") {
-          console.log("Device connection lost, triggering disconnection handler");
+          console.log(
+            "Device connection lost, triggering disconnection handler",
+          );
           handleDeviceDisconnection(
-            connectedDevice.id, 
-            connectedDevice.name || "IoT Holter"
+            connectedDevice.id,
+            connectedDevice.name || "IoT Holter",
           );
         }
       }
@@ -366,26 +452,26 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
       const device = await (navigator as any).bluetooth.requestDevice({
         filters: [{ namePrefix: "IoT Holter" }],
         optionalServices: [
-          "heart_rate", 
-          "battery_service", 
+          "heart_rate",
+          "battery_service",
           "0000180d-0000-1000-8000-00805f9b34fb",
           // Include ECG service UUID
-          TARGET_SERVICE_UUID
+          TARGET_SERVICE_UUID,
         ],
       });
 
       if (device) {
         // Connect to the device immediately after selection
         const gattServer = await device.gatt.connect();
-        
+
         // Add disconnection event listener
-        device.addEventListener('gattserverdisconnected', () => {
+        device.addEventListener("gattserverdisconnected", () => {
           handleDeviceDisconnection(device.id, device.name || "IoT Holter");
         });
 
         // Enable ECG channel notifications
         await enableECGNotifications(gattServer);
-        
+
         const newDevice: BluetoothDevice = {
           id: device.id,
           name: device.name || "IoT Holter",
@@ -396,7 +482,9 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
         setDevices((prev) => {
           const exists = prev.find((d) => d.id === newDevice.id);
           if (exists) {
-            return prev.map((d) => d.id === newDevice.id ? { ...d, isConnected: true } : d);
+            return prev.map((d) =>
+              d.id === newDevice.id ? { ...d, isConnected: true } : d,
+            );
           }
           return [...prev, newDevice];
         });
@@ -412,7 +500,7 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
             isConnected: true,
             rssi: -50, // Default signal strength
           });
-          
+
           // Invalidate cache to refresh device list
           queryClient.invalidateQueries({ queryKey: ["/api/ble-devices"] });
         } catch (apiError) {
@@ -437,7 +525,8 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
       } else if (error instanceof Error && error.name === "NotAllowedError") {
         toast({
           title: "Permission Denied",
-          description: "Bluetooth access was denied. Please allow Bluetooth permissions.",
+          description:
+            "Bluetooth access was denied. Please allow Bluetooth permissions.",
           variant: "destructive",
         });
       } else {
@@ -454,22 +543,24 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
     async (deviceId: string) => {
       try {
         setBleStatus("connecting");
-        
+
         toast({
           title: "Connecting...",
           description: "Connecting to IoT Holter device",
         });
 
         // Request the specific IoT Holter device directly
-        const bluetoothDevice = await (navigator as any).bluetooth.requestDevice({
+        const bluetoothDevice = await (
+          navigator as any
+        ).bluetooth.requestDevice({
           filters: [{ namePrefix: "IoT Holter" }],
           optionalServices: [
-            'heart_rate', 
-            'battery_service', 
-            '0000180d-0000-1000-8000-00805f9b34fb',
+            "heart_rate",
+            "battery_service",
+            "0000180d-0000-1000-8000-00805f9b34fb",
             // Include ECG service UUID
-            TARGET_SERVICE_UUID
-          ]
+            TARGET_SERVICE_UUID,
+          ],
         });
 
         if (!bluetoothDevice) {
@@ -478,26 +569,32 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
 
         // Connect to GATT server
         const server = await bluetoothDevice.gatt.connect();
-        
+
         // Add disconnection event listener
-        bluetoothDevice.addEventListener('gattserverdisconnected', () => {
-          handleDeviceDisconnection(bluetoothDevice.id, bluetoothDevice.name || "IoT Holter");
+        bluetoothDevice.addEventListener("gattserverdisconnected", () => {
+          handleDeviceDisconnection(
+            bluetoothDevice.id,
+            bluetoothDevice.name || "IoT Holter",
+          );
         });
 
         // Enable ECG channel notifications
         await enableECGNotifications(server);
-        
+
         // Try to discover available services on the device
         let service;
         try {
           // First try heart rate service (standard for ECG devices)
-          service = await server.getPrimaryService('heart_rate');
+          service = await server.getPrimaryService("heart_rate");
           console.log("Found heart rate service");
         } catch {
           try {
             // Try to get all available services
             const services = await server.getPrimaryServices();
-            console.log("Available services:", services.map((s: any) => s.uuid));
+            console.log(
+              "Available services:",
+              services.map((s: any) => s.uuid),
+            );
             if (services.length > 0) {
               service = services[0];
               console.log("Using first available service:", service.uuid);
@@ -512,18 +609,16 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
         }
 
         // Update device connection status in backend
-        await apiRequest(
-          "PATCH",
-          `/api/ble-devices/device/IoT-Holter-001`,
-          { isConnected: true }
-        );
+        await apiRequest("PATCH", `/api/ble-devices/device/IoT-Holter-001`, {
+          isConnected: true,
+        });
 
         setBleStatus("connected");
-        setConnectedDevice({ 
-          id: bluetoothDevice.id, 
+        setConnectedDevice({
+          id: bluetoothDevice.id,
           name: bluetoothDevice.name || "IoT Holter",
           isConnected: true,
-          bluetoothDevice: bluetoothDevice  // Store the actual Bluetooth device object
+          bluetoothDevice: bluetoothDevice, // Store the actual Bluetooth device object
         });
 
         // Invalidate cache to refresh device list
@@ -533,12 +628,12 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
           title: "Device Connected",
           description: `Successfully connected to ${bluetoothDevice.name || "IoT Holter"}`,
         });
-
       } catch (error) {
         console.error("Bluetooth connection error:", error);
         setBleStatus("disconnected");
 
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
         toast({
           title: "Connection Failed",
           description: `Failed to connect: ${errorMessage}`,
@@ -568,13 +663,16 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
 
     try {
       console.log("Attempting to disconnect device:", connectedDevice.name);
-      
+
       // If we have the actual Bluetooth device object, properly disconnect it
       if (connectedDevice.bluetoothDevice) {
         try {
           // Remove event listeners first to prevent duplicate disconnection events
-          connectedDevice.bluetoothDevice.removeEventListener('gattserverdisconnected', handleDeviceDisconnection);
-          
+          connectedDevice.bluetoothDevice.removeEventListener(
+            "gattserverdisconnected",
+            handleDeviceDisconnection,
+          );
+
           // Check if GATT server is still connected and disconnect it
           if (connectedDevice.bluetoothDevice.gatt?.connected) {
             console.log("Disconnecting GATT server...");
@@ -588,7 +686,9 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
           // Continue with cleanup even if GATT disconnect fails
         }
       } else {
-        console.warn("No Bluetooth device object available, proceeding with state cleanup");
+        console.warn(
+          "No Bluetooth device object available, proceeding with state cleanup",
+        );
       }
 
       // Update backend status
@@ -596,7 +696,7 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
         await apiRequest(
           "PATCH",
           `/api/ble-devices/device/${connectedDevice.id}`,
-          { isConnected: false }
+          { isConnected: false },
         );
         console.log("Backend updated successfully");
       } catch (backendError) {
@@ -621,24 +721,31 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
         title: "Device Disconnected",
         description: "Bluetooth device has been successfully disconnected.",
       });
-
     } catch (error) {
       console.error("Error during manual disconnection:", error);
-      
+
       // Force cleanup of local state even if there were errors
       setConnectedDevice(null);
       setBleStatus("disconnected");
-      
+
       toast({
         title: "Disconnection Error",
-        description: "There was an issue disconnecting the device, but local state has been cleared.",
+        description:
+          "There was an issue disconnecting the device, but local state has been cleared.",
         variant: "destructive",
       });
     } finally {
       // Reset disconnecting flag after a short delay
       setTimeout(() => setIsDisconnecting(false), 1000);
     }
-  }, [connectedDevice, toast, queryClient, handleDeviceDisconnection, isDisconnecting, bleStatus]);
+  }, [
+    connectedDevice,
+    toast,
+    queryClient,
+    handleDeviceDisconnection,
+    isDisconnecting,
+    bleStatus,
+  ]);
 
   return {
     bleStatus,
