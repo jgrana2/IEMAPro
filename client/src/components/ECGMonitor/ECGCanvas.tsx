@@ -83,8 +83,8 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
       drawGrid();
       
       // Set ECG line properties
-      ctx.strokeStyle = '#EF4444'; // Medical red like in the image
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#EF4444'; // Medical red
+      ctx.lineWidth = 2;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
@@ -92,26 +92,36 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
         ctx.beginPath();
         
         const centerY = canvasHeight / 2;
-        const amplitude = canvasHeight * 0.35; // Slightly larger amplitude
+        const amplitude = canvasHeight * 0.4; // More pronounced amplitude
         
-        // Auto-scale all leads based on signal amplitude
-        const minValue = Math.min(...data);
-        const maxValue = Math.max(...data);
+        // Enhanced scaling for better visualization
+        const recentData = data.slice(-Math.min(data.length, canvasWidth * 3));
+        const minValue = Math.min(...recentData);
+        const maxValue = Math.max(...recentData);
         const range = maxValue - minValue;
-        const scaleFactor = range > 0 ? 1 / range : 1;
         
-        for (let i = 0; i < canvasWidth; i++) {
-          const dataIndex = (offsetRef.current + i * 2) % data.length;
+        // Use adaptive scaling
+        let scaleFactor = 1;
+        if (range > 0) {
+          // Scale based on the data range to fill the canvas height appropriately
+          scaleFactor = 2 / range; // Adjust multiplier for better visibility
+        }
+        
+        // Draw sweeping ECG trace
+        const samplesPerPixel = Math.max(1, Math.floor(data.length / canvasWidth));
+        
+        for (let x = 0; x < canvasWidth; x++) {
+          // Calculate which data point to use for this pixel
+          const dataIndex = Math.floor((offsetRef.current + x * samplesPerPixel) % data.length);
           const rawValue = data[dataIndex] || 0;
           
-          // Normalize the value relative to the baseline (center of data range)
+          // Normalize and scale the value
           const baselineValue = (minValue + maxValue) / 2;
           const normalizedValue = (rawValue - baselineValue) * scaleFactor;
           
-          const x = i;
           const y = centerY - (normalizedValue * amplitude);
           
-          if (i === 0) {
+          if (x === 0) {
             ctx.moveTo(x, y);
           } else {
             ctx.lineTo(x, y);
@@ -120,8 +130,19 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
         
         ctx.stroke();
         
-        // Update offset for animation
-        offsetRef.current = (offsetRef.current + 1) % data.length; // Slower animation
+        // Add a sweeping line effect to show real-time data
+        if (data.length > 100) {
+          const sweepX = (offsetRef.current / samplesPerPixel) % canvasWidth;
+          ctx.strokeStyle = 'rgba(239, 68, 68, 0.3)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(sweepX, 0);
+          ctx.lineTo(sweepX, canvasHeight);
+          ctx.stroke();
+        }
+        
+        // Update offset for smooth animation
+        offsetRef.current = (offsetRef.current + 2) % data.length;
       } else {
         // Draw baseline when no data
         ctx.beginPath();
