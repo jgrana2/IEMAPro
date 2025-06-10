@@ -152,8 +152,8 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
       } else {
         // Draw baseline when no data
         ctx.beginPath();
-        ctx.moveTo(0, centerY);
-        ctx.lineTo(canvasWidth, centerY);
+        ctx.moveTo(0, canvasHeight / 2);
+        ctx.lineTo(canvasWidth, canvasHeight / 2);
         ctx.strokeStyle = '#EF4444';
         ctx.lineWidth = 1;
         ctx.stroke();

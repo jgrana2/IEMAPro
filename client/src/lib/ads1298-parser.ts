@@ -83,17 +83,20 @@ export function parseADS1298SingleChannel(rawData: number[], channelNumber: numb
       const b1 = rawData[startIndex + 1];
       const b2 = rawData[startIndex + 2];
 
-      // Combine 3 bytes into 24-bit value (MSB first)
-      const combined = (b0 << 16) | (b1 << 8) | b2;
+      // Parse 24-bit signed integer from 3 bytes using proper sign extension
+      const signedValue = parse24BitSigned(b0, b1, b2);
 
-      // Sign extension for 24-bit two's complement
-      const signedValue = (combined << 8) >> 8;
-
-      samples.push(signedValue);
+      // Convert raw ADC value to voltage (in mV) for proper ECG display
+      const voltage = adcToVoltage(signedValue, 12); // Use gain of 12 for typical ECG
+      
+      samples.push(voltage);
     }
   }
 
-  console.log(`Channel ${channelNumber}: Parsed ${samples.length} raw ADC values`);
+  console.log(`Channel ${channelNumber}: Parsed ${samples.length} voltage samples (mV)`);
+  if (samples.length > 0) {
+    console.log(`Channel ${channelNumber}: Sample range: ${Math.min(...samples).toFixed(3)} to ${Math.max(...samples).toFixed(3)} mV`);
+  }
   return samples;
 }
 
