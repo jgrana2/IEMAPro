@@ -12,6 +12,7 @@ import {
   Activity,
 } from "lucide-react";
 import { ECGCarousel } from "./ECGCarousel";
+import { ADS1298TestPanel } from "./ADS1298TestPanel";
 import { useQuery } from "@tanstack/react-query";
 import { generateECGReport, downloadPDF } from "@/lib/pdf-generator";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +30,7 @@ interface MainContentProps {
   ecgData?: { [leadName: string]: number[] };
   heartRate?: number;
   signalQuality?: "good" | "poor" | "noise";
+  onTestData?: (leadData: { [leadName: string]: number[] }, hr: number, quality: string) => void;
 }
 
 const ECG_LEADS = [
@@ -57,6 +59,7 @@ export function MainContent({
   ecgData = {},
   heartRate = 0,
   signalQuality = "poor",
+  onTestData,
 }: MainContentProps) {
   const [ecgHistory, setEcgHistory] = useState<ECGData[]>([]);
   const { toast } = useToast();
