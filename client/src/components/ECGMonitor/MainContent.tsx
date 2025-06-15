@@ -74,12 +74,8 @@ export function MainContent({
   // Debug logging to see what data we're receiving
   useEffect(() => {
     if (Object.keys(ecgData).length > 0) {
-      console.log("ECG Data received in MainContent:", {
-        leadNames: Object.keys(ecgData),
-        nSamples: ecgData[0]?.length || 0,
-        heartRate,
-        signalQuality,
-      });
+      const firstLead = Object.keys(ecgData)[0];
+      console.log(`Samples: ${ecgData[firstLead]?.length || 0}`);
     }
   }, [ecgData, heartRate, signalQuality]);
 
