@@ -180,7 +180,7 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
                     `Notifications enabled for characteristic ${targetCharUUID}`,
                   );
 
-                  // Add event listener for ECG data
+                  // Add event listener for ECG data. Signal entry point.
                   targetCharacteristic.addEventListener(
                     "characteristicvaluechanged",
                     (event: any) => {
@@ -205,19 +205,30 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
                       };
 
                       const channelNumber = channelMap[characteristicUuid];
+                      console.log(
+                        `Received data for channel ${channelNumber} (${characteristicUuid})`,
+                      );
                       if (channelNumber) {
                         try {
                           // Parse single channel data (28 samples of 24-bit values)
                           const rawData = Array.from(data);
                           // Use raw ADC values for channel 1 (Lead I), processed values for others
-                          const channelSamples = channelNumber === 1 
-                            ? parseADS1298SingleChannelRaw(rawData, channelNumber)
-                            : parseADS1298SingleChannel(rawData, channelNumber);
+                          const channelSamples =
+                            channelNumber === 1
+                              ? parseADS1298SingleChannelRaw(
+                                  rawData,
+                                  channelNumber,
+                                )
+                              : parseADS1298SingleChannel(
+                                  rawData,
+                                  channelNumber,
+                                );
 
                           if (channelSamples.length > 0) {
                             // Map channel data to appropriate ECG lead
-                            const leadData: { [leadName: string]: number[] } = {};
-                            
+                            const leadData: { [leadName: string]: number[] } =
+                              {};
+
                             // Map ADS1298 channels to standard ECG leads
                             switch (channelNumber) {
                               case 1:
@@ -245,14 +256,19 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
                                 leadData["V2"] = channelSamples;
                                 break;
                               default:
-                                leadData[`Channel ${channelNumber}`] = channelSamples;
+                                leadData[`Channel ${channelNumber}`] =
+                                  channelSamples;
                             }
 
                             // Calculate heart rate and assess quality for this channel
-                            const heartRate = calculateHeartRateFromChannel(channelSamples);
-                            const quality = assessChannelQuality(channelSamples);
+                            const heartRate =
+                              calculateHeartRateFromChannel(channelSamples);
+                            const quality =
+                              assessChannelQuality(channelSamples);
 
-                            console.log(`Channel ${channelNumber}: ${channelSamples.length} samples, HR: ${heartRate}, Quality: ${quality}`);
+                            console.log(
+                              `Channel ${channelNumber}: ${channelSamples.length} samples, HR: ${heartRate}, Quality: ${quality}`,
+                            );
 
                             // Send processed data to callback
                             if (onECGData) {
