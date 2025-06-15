@@ -21,10 +21,11 @@ export function ECGCarousel({ leads, isActive }: ECGCarouselProps) {
   const carouselRef = useRef<HTMLDivElement>(null);
 
   // Log leads length for debugging
-  console.log(`ECGCarousel: Total leads: ${leads.length}`);
   leads.forEach((lead, index) => {
     if (lead.data.length > 0) {
-      console.log(`Lead ${index + 1} (${lead.name}): ${lead.data.length} samples`);
+      console.log(
+        `Lead ${index + 1} (${lead.name}): ${lead.data.length} samples`,
+      );
     }
   });
 

@@ -46,6 +46,11 @@ export default function ECGMonitor() {
       if (newBuffer[leadName].length > maxBufferSize) {
         newBuffer[leadName] = newBuffer[leadName].slice(-maxBufferSize);
       }
+
+      // Print the length of this lead's buffer
+      console.log(
+        `Buffer for ${leadName} now has ${newBuffer[leadName].length} samples`,
+      );
     });
 
     setEcgData(newBuffer);
@@ -54,12 +59,15 @@ export default function ECGMonitor() {
 
     // Log which leads were updated in this packet
     const updatedLeads = Object.keys(leadData);
-    const leadSummary = updatedLeads.map(leadName => 
-      `${leadName}: ${newBuffer[leadName]?.length || 0} total samples`
-    ).join(', ');
-    
+    const leadSummary = updatedLeads
+      .map(
+        (leadName) =>
+          `${leadName}: ${newBuffer[leadName]?.length || 0} total samples`,
+      )
+      .join(", ");
+
     console.log(
-      `ECG data updated - Leads: [${updatedLeads.join(', ')}] | ${leadSummary} | HR: ${hr}, Quality: ${quality}`,
+      `ECG data updated - Leads: [${updatedLeads.join(", ")}] | ${leadSummary} | HR: ${hr}, Quality: ${quality}`,
     );
   };
 

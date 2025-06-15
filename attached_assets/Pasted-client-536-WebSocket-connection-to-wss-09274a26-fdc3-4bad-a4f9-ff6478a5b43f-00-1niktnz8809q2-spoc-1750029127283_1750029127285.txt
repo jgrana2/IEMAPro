@@ -1,0 +1,399 @@
+client:536 WebSocket connection to 'wss://09274a26-fdc3-4bad-a4f9-ff6478a5b43f-00-1niktnz8809q2.spock.replit.dev/?token=FgFU8yTaIQsx' failed: 
+setupWebSocket @ client:536
+(anonymous) @ client:531
+client:536 Uncaught (in promise) SyntaxError: Failed to construct 'WebSocket': The URL 'wss://localhost:undefined/?token=FgFU8yTaIQsx' is invalid.
+    at setupWebSocket (client:536:19)
+    at fallback (client:509:16)
+    at WebSocket.<anonymous> (client:555:7)
+setupWebSocket @ client:536
+fallback @ client:509
+(anonymous) @ client:555
+chunk-RPCDYKBN.js?v=dfd95fa9:21551 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+useWebSocket.ts:36 WebSocket connected
+useWebSocket.ts:36 WebSocket connected
+useWebSocket.ts:36 WebSocket connected
+useBluetooth.ts:132 Discovering services for ECG device...
+useBluetooth.ts:138 Found ECG service: 0000805b-0000-1000-8000-00805f9b34fb
+useBluetooth.ts:142 ECG service has 9 characteristics
+useBluetooth.ts:168 Found characteristic: 00008171-0000-1000-8000-00805f9b34fb
+useBluetooth.ts:179 Notifications enabled for characteristic 00008171-0000-1000-8000-00805f9b34fb
+useBluetooth.ts:168 Found characteristic: 00008172-0000-1000-8000-00805f9b34fb
+useBluetooth.ts:190 BLE data from 00008171-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 1 (00008171-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:117 Processing Channel 1 (RAW): 84 bytes as 28 samples
+ads1298-parser.ts:134 Channel 1 (RAW): Parsed 28 raw ADC samples
+ads1298-parser.ts:136 Channel 1 (RAW): Sample range: -215596 to -212035
+useBluetooth.ts:269 Channel 1: 28 samples, HR: 200, Quality: noise
+ecg-monitor.tsx:51 Buffer for Lead I now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead I] | Lead I: 28 total samples | HR: 200, Quality: noise
+ECGCarousel.tsx:26 Lead 1 (Lead I): 28 samples
+useBluetooth.ts:179 Notifications enabled for characteristic 00008172-0000-1000-8000-00805f9b34fb
+useBluetooth.ts:168 Found characteristic: 00008173-0000-1000-8000-00805f9b34fb
+useBluetooth.ts:179 Notifications enabled for characteristic 00008173-0000-1000-8000-00805f9b34fb
+useBluetooth.ts:168 Found characteristic: 00008174-0000-1000-8000-00805f9b34fb
+useBluetooth.ts:179 Notifications enabled for characteristic 00008174-0000-1000-8000-00805f9b34fb
+useBluetooth.ts:168 Found characteristic: 00008175-0000-1000-8000-00805f9b34fb
+useBluetooth.ts:179 Notifications enabled for characteristic 00008175-0000-1000-8000-00805f9b34fb
+useBluetooth.ts:168 Found characteristic: 00008176-0000-1000-8000-00805f9b34fb
+useBluetooth.ts:190 BLE data from 00008171-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 1 (00008171-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:117 Processing Channel 1 (RAW): 84 bytes as 28 samples
+ads1298-parser.ts:134 Channel 1 (RAW): Parsed 28 raw ADC samples
+ads1298-parser.ts:136 Channel 1 (RAW): Sample range: -215629 to -211259
+useBluetooth.ts:269 Channel 1: 28 samples, HR: 200, Quality: noise
+ecg-monitor.tsx:51 Buffer for Lead I now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead I] | Lead I: 28 total samples | HR: 200, Quality: noise
+ECGCarousel.tsx:26 Lead 1 (Lead I): 28 samples
+useBluetooth.ts:190 BLE data from 00008172-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 2 (00008172-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 2: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 2: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 2: Sample range: 26.478 to 26.826 mV
+useBluetooth.ts:269 Channel 2: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for Lead II now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead II] | Lead II: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 2 (Lead II): 28 samples
+useBluetooth.ts:190 BLE data from 00008173-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 3 (00008173-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 3: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 3: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 3: Sample range: -5.720 to -5.338 mV
+useBluetooth.ts:269 Channel 3: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for Lead III now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead III] | Lead III: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 3 (Lead III): 28 samples
+useBluetooth.ts:190 BLE data from 00008174-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 4 (00008174-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 4: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 4: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 4: Sample range: -5.414 to -4.965 mV
+useBluetooth.ts:269 Channel 4: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for aVR now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [aVR] | aVR: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 4 (aVR): 28 samples
+useBluetooth.ts:190 BLE data from 00008175-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 5 (00008175-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 5: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 5: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 5: Sample range: -5.665 to -5.214 mV
+useBluetooth.ts:269 Channel 5: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for aVL now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [aVL] | aVL: 28 total samples | HR: 200, Quality: poor
+useBluetooth.ts:179 Notifications enabled for characteristic 00008176-0000-1000-8000-00805f9b34fb
+useBluetooth.ts:168 Found characteristic: 00008177-0000-1000-8000-00805f9b34fb
+ECGCarousel.tsx:26 Lead 5 (aVL): 28 samples
+useBluetooth.ts:179 Notifications enabled for characteristic 00008177-0000-1000-8000-00805f9b34fb
+useBluetooth.ts:168 Found characteristic: 00008178-0000-1000-8000-00805f9b34fb
+useBluetooth.ts:179 Notifications enabled for characteristic 00008178-0000-1000-8000-00805f9b34fb
+useBluetooth.ts:190 BLE data from 00008171-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 1 (00008171-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:117 Processing Channel 1 (RAW): 84 bytes as 28 samples
+ads1298-parser.ts:134 Channel 1 (RAW): Parsed 28 raw ADC samples
+ads1298-parser.ts:136 Channel 1 (RAW): Sample range: -215425 to -203271
+useBluetooth.ts:269 Channel 1: 28 samples, HR: 200, Quality: noise
+ecg-monitor.tsx:51 Buffer for Lead I now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead I] | Lead I: 28 total samples | HR: 200, Quality: noise
+ECGCarousel.tsx:26 Lead 1 (Lead I): 28 samples
+useBluetooth.ts:190 BLE data from 00008172-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 2 (00008172-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 2: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 2: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 2: Sample range: 26.477 to 27.440 mV
+useBluetooth.ts:269 Channel 2: 28 samples, HR: 75, Quality: poor
+ecg-monitor.tsx:51 Buffer for Lead II now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead II] | Lead II: 28 total samples | HR: 75, Quality: poor
+ECGCarousel.tsx:26 Lead 2 (Lead II): 28 samples
+useBluetooth.ts:190 BLE data from 00008173-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 3 (00008173-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 3: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 3: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 3: Sample range: -6.169 to -5.134 mV
+useBluetooth.ts:269 Channel 3: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for Lead III now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead III] | Lead III: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 3 (Lead III): 28 samples
+useBluetooth.ts:190 BLE data from 00008174-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 4 (00008174-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 4: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 4: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 4: Sample range: -6.407 to -4.762 mV
+useBluetooth.ts:269 Channel 4: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for aVR now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [aVR] | aVR: 28 total samples | HR: 200, Quality: poor
+useBluetooth.ts:190 BLE data from 00008175-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 5 (00008175-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 5: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 5: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 5: Sample range: -6.398 to -4.644 mV
+useBluetooth.ts:269 Channel 5: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for aVL now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [aVL] | aVL: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 5 (aVL): 28 samples
+useBluetooth.ts:190 BLE data from 00008176-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 6 (00008176-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 6: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 6: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 6: Sample range: -8.817 to -7.437 mV
+useBluetooth.ts:269 Channel 6: 28 samples, HR: 75, Quality: poor
+ecg-monitor.tsx:51 Buffer for aVF now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [aVF] | aVF: 28 total samples | HR: 75, Quality: poor
+ECGCarousel.tsx:26 Lead 6 (aVF): 28 samples
+useBluetooth.ts:190 BLE data from 00008177-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 7 (00008177-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 7: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 7: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 7: Sample range: -12.262 to -11.079 mV
+useBluetooth.ts:269 Channel 7: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for V1 now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [V1] | V1: 28 total samples | HR: 200, Quality: poor
+useBluetooth.ts:190 BLE data from 00008178-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 8 (00008178-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 8: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 8: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 8: Sample range: -15.013 to -14.017 mV
+useBluetooth.ts:269 Channel 8: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for V2 now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [V2] | V2: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 8 (V2): 28 samples
+useBluetooth.ts:190 BLE data from 00008171-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 1 (00008171-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:117 Processing Channel 1 (RAW): 84 bytes as 28 samples
+ads1298-parser.ts:134 Channel 1 (RAW): Parsed 28 raw ADC samples
+ads1298-parser.ts:136 Channel 1 (RAW): Sample range: -220352 to -211247
+useBluetooth.ts:269 Channel 1: 28 samples, HR: 200, Quality: noise
+ecg-monitor.tsx:51 Buffer for Lead I now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead I] | Lead I: 28 total samples | HR: 200, Quality: noise
+ECGCarousel.tsx:26 Lead 1 (Lead I): 28 samples
+useBluetooth.ts:190 BLE data from 00008172-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 2 (00008172-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 2: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 2: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 2: Sample range: 26.266 to 26.878 mV
+useBluetooth.ts:269 Channel 2: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for Lead II now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead II] | Lead II: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 2 (Lead II): 28 samples
+useBluetooth.ts:190 BLE data from 00008173-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 3 (00008173-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 3: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 3: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 3: Sample range: -6.381 to -5.364 mV
+useBluetooth.ts:269 Channel 3: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for Lead III now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead III] | Lead III: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 3 (Lead III): 28 samples
+useBluetooth.ts:190 BLE data from 00008174-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 4 (00008174-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 4: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 4: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 4: Sample range: -5.896 to -5.056 mV
+useBluetooth.ts:269 Channel 4: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for aVR now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [aVR] | aVR: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 4 (aVR): 28 samples
+useBluetooth.ts:190 BLE data from 00008175-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 5 (00008175-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 5: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 5: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 5: Sample range: -6.107 to -5.305 mV
+useBluetooth.ts:269 Channel 5: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for aVL now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [aVL] | aVL: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 5 (aVL): 28 samples
+ECGCarousel.tsx:26 Lead 5 (aVL): 28 samples
+useBluetooth.ts:190 BLE data from 00008176-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 6 (00008176-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 6: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 6: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 6: Sample range: -9.304 to -8.434 mV
+useBluetooth.ts:269 Channel 6: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for aVF now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [aVF] | aVF: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 6 (aVF): 28 samples
+useBluetooth.ts:190 BLE data from 00008177-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 7 (00008177-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 7: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 7: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 7: Sample range: -12.654 to -11.896 mV
+useBluetooth.ts:269 Channel 7: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for V1 now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [V1] | V1: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 7 (V1): 28 samples
+useBluetooth.ts:190 BLE data from 00008178-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 8 (00008178-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 8: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 8: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 8: Sample range: -15.305 to -14.621 mV
+useBluetooth.ts:269 Channel 8: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for V2 now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [V2] | V2: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 8 (V2): 28 samples
+useBluetooth.ts:190 BLE data from 00008171-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 1 (00008171-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:117 Processing Channel 1 (RAW): 84 bytes as 28 samples
+ads1298-parser.ts:134 Channel 1 (RAW): Parsed 28 raw ADC samples
+ads1298-parser.ts:136 Channel 1 (RAW): Sample range: -214252 to -209577
+useBluetooth.ts:269 Channel 1: 28 samples, HR: 200, Quality: noise
+ecg-monitor.tsx:51 Buffer for Lead I now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead I] | Lead I: 28 total samples | HR: 200, Quality: noise
+ECGCarousel.tsx:26 Lead 1 (Lead I): 28 samples
+useBluetooth.ts:190 BLE data from 00008172-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 2 (00008172-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 2: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 2: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 2: Sample range: 26.556 to 26.903 mV
+useBluetooth.ts:269 Channel 2: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for Lead II now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead II] | Lead II: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 2 (Lead II): 28 samples
+useBluetooth.ts:190 BLE data from 00008173-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 3 (00008173-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 3: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 3: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 3: Sample range: -5.707 to -5.292 mV
+useBluetooth.ts:269 Channel 3: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for Lead III now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead III] | Lead III: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 3 (Lead III): 28 samples
+useBluetooth.ts:190 BLE data from 00008174-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 4 (00008174-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 4: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 4: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 4: Sample range: -5.335 to -4.787 mV
+useBluetooth.ts:269 Channel 4: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for aVR now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [aVR] | aVR: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 4 (aVR): 28 samples
+useBluetooth.ts:190 BLE data from 00008175-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 5 (00008175-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 5: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 5: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 5: Sample range: -5.587 to -5.038 mV
+useBluetooth.ts:269 Channel 5: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for aVL now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [aVL] | aVL: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 5 (aVL): 28 samples
+useBluetooth.ts:190 BLE data from 00008176-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 6 (00008176-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 6: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 6: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 6: Sample range: -8.706 to -8.252 mV
+useBluetooth.ts:269 Channel 6: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for aVF now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [aVF] | aVF: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 6 (aVF): 28 samples
+useBluetooth.ts:190 BLE data from 00008177-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 7 (00008177-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 7: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 7: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 7: Sample range: -12.175 to -11.725 mV
+useBluetooth.ts:269 Channel 7: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for V1 now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [V1] | V1: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 7 (V1): 28 samples
+useBluetooth.ts:190 BLE data from 00008178-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 8 (00008178-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 8: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 8: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 8: Sample range: -14.944 to -14.484 mV
+useBluetooth.ts:269 Channel 8: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for V2 now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [V2] | V2: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 8 (V2): 28 samples
+useBluetooth.ts:190 BLE data from 00008171-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 1 (00008171-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:117 Processing Channel 1 (RAW): 84 bytes as 28 samples
+ads1298-parser.ts:134 Channel 1 (RAW): Parsed 28 raw ADC samples
+ads1298-parser.ts:136 Channel 1 (RAW): Sample range: -215524 to -210019
+useBluetooth.ts:269 Channel 1: 28 samples, HR: 200, Quality: noise
+ecg-monitor.tsx:51 Buffer for Lead I now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead I] | Lead I: 28 total samples | HR: 200, Quality: noise
+ECGCarousel.tsx:26 Lead 1 (Lead I): 28 samples
+useBluetooth.ts:190 BLE data from 00008172-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 2 (00008172-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 2: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 2: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 2: Sample range: 26.476 to 26.827 mV
+useBluetooth.ts:269 Channel 2: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for Lead II now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead II] | Lead II: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 2 (Lead II): 28 samples
+useBluetooth.ts:190 BLE data from 00008173-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 3 (00008173-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 3: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 3: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 3: Sample range: -5.734 to -5.298 mV
+useBluetooth.ts:269 Channel 3: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for Lead III now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead III] | Lead III: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 3 (Lead III): 28 samples
+useBluetooth.ts:190 BLE data from 00008174-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 4 (00008174-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 4: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 4: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 4: Sample range: -5.427 to -4.832 mV
+useBluetooth.ts:269 Channel 4: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for aVR now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [aVR] | aVR: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 4 (aVR): 28 samples
+useBluetooth.ts:190 BLE data from 00008175-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 5 (00008175-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 5: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 5: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 5: Sample range: -5.680 to -5.082 mV
+useBluetooth.ts:269 Channel 5: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for aVL now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [aVL] | aVL: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 5 (aVL): 28 samples
+useBluetooth.ts:190 BLE data from 00008176-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 6 (00008176-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 6: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 6: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 6: Sample range: -8.818 to -8.300 mV
+useBluetooth.ts:269 Channel 6: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for aVF now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [aVF] | aVF: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 6 (aVF): 28 samples
+useBluetooth.ts:190 BLE data from 00008177-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 7 (00008177-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 7: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 7: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 7: Sample range: -12.255 to -11.762 mV
+useBluetooth.ts:269 Channel 7: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for V1 now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [V1] | V1: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 7 (V1): 28 samples
+useBluetooth.ts:190 BLE data from 00008178-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 8 (00008178-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 8: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 8: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 8: Sample range: -14.993 to -14.504 mV
+useBluetooth.ts:269 Channel 8: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for V2 now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [V2] | V2: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 8 (V2): 28 samples
+useBluetooth.ts:190 BLE data from 00008171-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 1 (00008171-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:117 Processing Channel 1 (RAW): 84 bytes as 28 samples
+ads1298-parser.ts:134 Channel 1 (RAW): Parsed 28 raw ADC samples
+ads1298-parser.ts:136 Channel 1 (RAW): Sample range: -215559 to -212071
+useBluetooth.ts:269 Channel 1: 28 samples, HR: 200, Quality: noise
+ecg-monitor.tsx:51 Buffer for Lead I now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead I] | Lead I: 28 total samples | HR: 200, Quality: noise
+ECGCarousel.tsx:26 Lead 1 (Lead I): 28 samples
+useBluetooth.ts:190 BLE data from 00008172-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 2 (00008172-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 2: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 2: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 2: Sample range: 26.477 to 26.743 mV
+useBluetooth.ts:269 Channel 2: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for Lead II now has 28 samples
+ecg-monitor.tsx:69 ECG data updated - Leads: [Lead II] | Lead II: 28 total samples | HR: 200, Quality: poor
+ECGCarousel.tsx:26 Lead 2 (Lead II): 28 samples
+useBluetooth.ts:190 BLE data from 00008173-0000-1000-8000-00805f9b34fb: 84 bytes
+useBluetooth.ts:208 Received data for channel 3 (00008173-0000-1000-8000-00805f9b34fb)
+ads1298-parser.ts:77 Processing Channel 3: 84 bytes as 28 samples
+ads1298-parser.ts:96 Channel 3: Parsed 28 voltage samples (mV)
+ads1298-parser.ts:98 Channel 3: Sample range: -5.735 to -5.366 mV
+useBluetooth.ts:269 Channel 3: 28 samples, HR: 200, Quality: poor
+ecg-monitor.tsx:51 Buffer for Lead III now has 28 samples

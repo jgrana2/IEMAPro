@@ -71,14 +71,6 @@ export function MainContent({
   // Get WebSocket functions for sending data (if needed)
   const { sendADS1298Data } = useWebSocket();
 
-  // Debug logging to see what data we're receiving
-  useEffect(() => {
-    if (Object.keys(ecgData).length > 0) {
-      const firstLead = Object.keys(ecgData)[0];
-      console.log(`Samples: ${ecgData[firstLead]?.length || 0}`);
-    }
-  }, [ecgData, heartRate, signalQuality]);
-
   const { data: systemLogs = [] } = useQuery({
     queryKey: ["/api/system-logs"],
     refetchInterval: 2000, // Refresh logs every 2 seconds
