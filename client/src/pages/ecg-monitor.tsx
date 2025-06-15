@@ -30,45 +30,49 @@ export default function ECGMonitor() {
     hr: number,
     quality: string,
   ) => {
-    // Update ECG data buffer with rolling window
+    // Update ECG data buffer with rolling window using functional state update
     const maxBufferSize = 2500; // Keep ~5 seconds at 500Hz
-    const newBuffer = { ...ecgData };
+    
+    setEcgData(currentBuffer => {
+      const newBuffer = { ...currentBuffer };
+      
+      Object.entries(leadData).forEach(([leadName, newSamples]) => {
+        if (!newBuffer[leadName]) {
+          newBuffer[leadName] = [];
+        }
 
-    Object.entries(leadData).forEach(([leadName, newSamples]) => {
-      if (!newBuffer[leadName]) {
-        newBuffer[leadName] = [];
-      }
+        // Append new samples to existing buffer
+        newBuffer[leadName] = [...newBuffer[leadName], ...newSamples];
 
-      // Append new samples
-      newBuffer[leadName] = [...newBuffer[leadName], ...newSamples];
+        // Keep only the most recent samples
+        if (newBuffer[leadName].length > maxBufferSize) {
+          newBuffer[leadName] = newBuffer[leadName].slice(-maxBufferSize);
+        }
 
-      // Keep only the most recent samples
-      if (newBuffer[leadName].length > maxBufferSize) {
-        newBuffer[leadName] = newBuffer[leadName].slice(-maxBufferSize);
-      }
+        // Print the length of this lead's buffer
+        console.log(
+          `Buffer for ${leadName} now has ${newBuffer[leadName].length} samples (added ${newSamples.length})`,
+        );
+      });
 
-      // Print the length of this lead's buffer
+      // Log which leads were updated in this packet
+      const updatedLeads = Object.keys(leadData);
+      const leadSummary = updatedLeads
+        .map(
+          (leadName) =>
+            `${leadName}: ${newBuffer[leadName]?.length || 0} total samples`,
+        )
+        .join(", ");
+
       console.log(
-        `Buffer for ${leadName} now has ${newBuffer[leadName].length} samples`,
+        `ECG data updated - Leads: [${updatedLeads.join(", ")}] | ${leadSummary} | HR: ${hr}, Quality: ${quality}`,
       );
+      
+      return newBuffer;
     });
 
-    setEcgData(newBuffer);
     setHeartRate(hr);
     setSignalQuality(quality as "good" | "poor" | "noise");
-
-    // Log which leads were updated in this packet
-    const updatedLeads = Object.keys(leadData);
-    const leadSummary = updatedLeads
-      .map(
-        (leadName) =>
-          `${leadName}: ${newBuffer[leadName]?.length || 0} total samples`,
-      )
-      .join(", ");
-
-    console.log(
-      `ECG data updated - Leads: [${updatedLeads.join(", ")}] | ${leadSummary} | HR: ${hr}, Quality: ${quality}`,
-    );
   };
 
   const { bleStatus, devices, scanDevices, connectDevice, disconnectDevice } =
