@@ -30,7 +30,11 @@ interface MainContentProps {
   ecgData?: { [leadName: string]: number[] };
   heartRate?: number;
   signalQuality?: "good" | "poor" | "noise";
-  onTestData?: (leadData: { [leadName: string]: number[] }, hr: number, quality: string) => void;
+  onTestData?: (
+    leadData: { [leadName: string]: number[] },
+    hr: number,
+    quality: string,
+  ) => void;
 }
 
 const ECG_LEADS = [
@@ -72,8 +76,7 @@ export function MainContent({
     if (Object.keys(ecgData).length > 0) {
       console.log("ECG Data received in MainContent:", {
         leadNames: Object.keys(ecgData),
-        leadISamples: ecgData["Lead I"]?.length || 0,
-        leadIISamples: ecgData["Lead II"]?.length || 0,
+        nSamples: ecgData[0]?.length || 0,
         heartRate,
         signalQuality,
       });
