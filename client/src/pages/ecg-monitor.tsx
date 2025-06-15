@@ -52,8 +52,14 @@ export default function ECGMonitor() {
     setHeartRate(hr);
     setSignalQuality(quality as "good" | "poor" | "noise");
 
+    // Log which leads were updated in this packet
+    const updatedLeads = Object.keys(leadData);
+    const leadSummary = updatedLeads.map(leadName => 
+      `${leadName}: ${newBuffer[leadName]?.length || 0} total samples`
+    ).join(', ');
+    
     console.log(
-      `ECG data updated: Lead I samples: ${newBuffer["Lead I"]?.length || 0}, HR: ${hr}, Quality: ${quality}`,
+      `ECG data updated - Leads: [${updatedLeads.join(', ')}] | ${leadSummary} | HR: ${hr}, Quality: ${quality}`,
     );
   };
 
