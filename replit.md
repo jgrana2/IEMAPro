@@ -108,6 +108,7 @@ This is a comprehensive medical ECG monitoring application built for real-time I
 
 Changelog:
 - June 15, 2025. Initial setup
+- June 15, 2025. Fixed ECG data buffer accumulation issue - buffer now properly grows from 28 to 2500 samples instead of resetting
 
 ## User Preferences
 

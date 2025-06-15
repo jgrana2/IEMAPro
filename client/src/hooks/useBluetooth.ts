@@ -2,9 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
-  parseADS1298DataRaw,
   parseADS1298SingleChannel,
-  parseADS1298SingleChannelRaw,
   convertToECGFormat,
   calculateHeartRateFromSamples,
   calculateHeartRateFromChannel,
@@ -187,10 +185,6 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
                       const value = event.target.value;
                       const data = new Uint8Array(value.buffer);
 
-                      console.log(
-                        `BLE data from ${targetCharUUID}: ${data.length} bytes`,
-                      );
-
                       // Handle single-channel ADS1298 ECG data for characteristics 8171-8178
                       const characteristicUuid = targetCharUUID.toLowerCase();
                       const channelMap: { [key: string]: number } = {
@@ -205,24 +199,15 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
                       };
 
                       const channelNumber = channelMap[characteristicUuid];
-                      console.log(
-                        `Received data for channel ${channelNumber} (${characteristicUuid})`,
-                      );
                       if (channelNumber) {
                         try {
                           // Parse single channel data (28 samples of 24-bit values)
                           const rawData = Array.from(data);
                           // Use raw ADC values for channel 1 (Lead I), processed values for others
-                          const channelSamples =
-                            channelNumber === 1
-                              ? parseADS1298SingleChannelRaw(
-                                  rawData,
-                                  channelNumber,
-                                )
-                              : parseADS1298SingleChannel(
-                                  rawData,
-                                  channelNumber,
-                                );
+                          const channelSamples = parseADS1298SingleChannel(
+                            rawData,
+                            channelNumber,
+                          );
 
                           if (channelSamples.length > 0) {
                             // Map channel data to appropriate ECG lead
@@ -266,10 +251,6 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
                             const quality =
                               assessChannelQuality(channelSamples);
 
-                            console.log(
-                              `Channel ${channelNumber}: ${channelSamples.length} samples, HR: ${heartRate}, Quality: ${quality}`,
-                            );
-
                             // Send processed data to callback
                             if (onECGData) {
                               onECGData(leadData, heartRate, quality);
@@ -278,46 +259,6 @@ export function useBluetooth({ onECGData }: BluetoothHookProps = {}) {
                         } catch (parseError) {
                           console.error(
                             `Failed to process Channel ${channelNumber} ECG data:`,
-                            parseError,
-                          );
-                        }
-                      } else {
-                        // Fallback to original ADS1298 parser for other characteristics
-                        const rawData = Array.from(data);
-                        try {
-                          if (rawData.length === 84) {
-                            // Full ADS1298 packet
-                            const parsedData: ParsedECGData =
-                              parseADS1298DataRaw(rawData);
-                            const leadData = convertToECGFormat(parsedData);
-                            const heartRate = calculateHeartRateFromSamples(
-                              parsedData.samples,
-                              parsedData.sampleRate,
-                            );
-
-                            console.log(
-                              `Parsed ${parsedData.samples.length} ECG samples from BLE`,
-                            );
-                            console.log(
-                              `Lead I data: ${leadData["Lead I"]?.length || 0} samples`,
-                            );
-
-                            // Send processed data to callback
-                            if (onECGData) {
-                              onECGData(
-                                leadData,
-                                heartRate,
-                                parsedData.quality,
-                              );
-                            }
-                          } else {
-                            console.log(
-                              `Received ${rawData.length} bytes - not a full ADS1298 packet`,
-                            );
-                          }
-                        } catch (parseError) {
-                          console.error(
-                            "Failed to parse BLE ECG data:",
                             parseError,
                           );
                         }
