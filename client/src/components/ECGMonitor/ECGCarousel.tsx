@@ -23,7 +23,9 @@ export function ECGCarousel({ leads, isActive }: ECGCarouselProps) {
   // Log leads length for debugging
   console.log(`ECGCarousel: Total leads: ${leads.length}`);
   leads.forEach((lead, index) => {
-    console.log(`Lead ${index + 1} (${lead.name}): ${lead.data.length} samples`);
+    if (lead.data.length > 0) {
+      console.log(`Lead ${index + 1} (${lead.name}): ${lead.data.length} samples`);
+    }
   });
 
   // Adjust visible leads based on screen size
