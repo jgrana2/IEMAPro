@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { convertToECGFormat, calculateHeartRateFromSamples, type ParsedECGData } from '@/lib/ads1298-parser';
+import { convertToECGFormat, calculateHeartRateFromSamples, parseADS1298DataRaw, type ParsedECGData } from '@/lib/ads1298-parser';
 
 interface WebSocketMessage {
   type: string;
