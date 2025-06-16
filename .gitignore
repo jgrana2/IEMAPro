@@ -4,3 +4,6 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+backend/__pycache__/
+backend/env/
+backend/ecg_monitor.db

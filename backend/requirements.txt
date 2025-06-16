@@ -1,0 +1,29 @@
+# FastAPI and web server dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+websockets==12.0
+python-multipart==0.0.6
+
+# BLE communication
+bleak==0.21.1
+
+# Database and data handling
+sqlalchemy==2.0.23
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Data processing and utilities
+numpy>=1.21.0
+scipy>=1.7.0
+
+# AI and analysis (matching your current setup)
+anthropic>=0.7.0
+
+# Utilities
+python-dateutil==2.8.2
+json5==0.9.14
+aiofiles==23.2.1
+
+# Development and testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
