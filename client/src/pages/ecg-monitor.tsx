@@ -7,7 +7,7 @@ import { AIDiagnosisPanel } from "@/components/ECGMonitor/AIDiagnosisPanel";
 import { ADS1298TestPanel } from "@/components/ECGMonitor/ADS1298TestPanel";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useBluetooth } from "@/hooks/useBluetooth";
+import { usePythonBLE } from "@/hooks/usePythonBLE";
 import { Bot } from "lucide-react";
 
 export default function ECGMonitor() {
@@ -58,7 +58,7 @@ export default function ECGMonitor() {
   };
 
   const { bleStatus, devices, scanDevices, connectDevice, disconnectDevice } =
-    useBluetooth({
+    usePythonBLE({
       onECGData: handleECGData,
     });
   const [aiPanelExpanded, setAiPanelExpanded] = useState(true);

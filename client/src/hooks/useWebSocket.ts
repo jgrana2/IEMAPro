@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { convertToECGFormat, calculateHeartRateFromSamples, type ParsedECGData } from '@/lib/ads1298-parser';
+import { convertToECGFormat, calculateHeartRateFromSamples, parseADS1298DataRaw, type ParsedECGData } from '@/lib/ads1298-parser';
 
 interface WebSocketMessage {
   type: string;
@@ -43,8 +43,33 @@ export function useWebSocket() {
           const message = JSON.parse(event.data);
           setLastMessage(message);
 
-          // Handle ADS1298 ECG data
-          if (message.type === 'ads1298_data' && message.rawData) {
+          // Handle ECG data from Python backend (both processed and raw)
+          if (message.type === 'ecg_data' && message.leadData) {
+            // Direct processed ECG data from Python backend
+            const maxBufferSize = 2500;
+            const newBuffer = { ...ecgBufferRef.current };
+
+            Object.entries(message.leadData).forEach(([leadName, newSamples]) => {
+              if (!newBuffer[leadName]) {
+                newBuffer[leadName] = [];
+              }
+              
+              // Append new samples
+              newBuffer[leadName] = [...newBuffer[leadName], ...(newSamples as number[])];
+              
+              // Keep only the most recent samples
+              if (newBuffer[leadName].length > maxBufferSize) {
+                newBuffer[leadName] = newBuffer[leadName].slice(-maxBufferSize);
+              }
+            });
+
+            ecgBufferRef.current = newBuffer;
+            setEcgData({ ...newBuffer });
+            setHeartRate(message.heartRate || 75);
+            setSignalQuality(message.quality || 'good');
+
+          } else if (message.type === 'ads1298_data' && message.rawData) {
+            // Raw ADS1298 data - parse it
             try {
               const parsedData: ParsedECGData = parseADS1298DataRaw(message.rawData);
               const leadData = convertToECGFormat(parsedData);
