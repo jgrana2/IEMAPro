@@ -41,8 +41,14 @@ def parse_24bit_signed(byte0: int, byte1: int, byte2: int) -> int:
     # Combine bytes: b0 << 16 | b1 << 8 | b2
     combined = (byte0 << 16) | (byte1 << 8) | byte2
     
-    # Sign extension: shift left 8 bits then arithmetic right shift 8 bits
-    signed_value = (combined << 8) >> 8
+    # Check if the sign bit (bit 23) is set
+    if combined & 0x800000:  # Sign bit is set (negative number)
+        # Sign extend by setting upper 8 bits to 1
+        signed_value = combined | 0xFF000000
+        # Convert to Python signed int using two's complement
+        signed_value = signed_value - 0x100000000
+    else:
+        signed_value = combined
     
     return signed_value
 
@@ -96,9 +102,9 @@ def parse_ads1298_single_channel(raw_data: List[int], channel_number: int) -> Li
             signed_value = parse_24bit_signed(b0, b1, b2)
             
             # Convert raw ADC value to voltage (in mV) for proper ECG display
-            # voltage = adc_to_voltage(signed_value, 12)  # Use gain of 12 for typical ECG
+            voltage = adc_to_voltage(signed_value, 12)  # Use gain of 12 for typical ECG
             
-            samples.append(signed_value)
+            samples.append(voltage)
     
     return samples
 
@@ -247,7 +253,6 @@ def assess_signal_quality(samples: List[ADS1298Sample]) -> str:
     
     # Check for reasonable ECG amplitude (0.1 - 5 mV typical)
     max_amplitude = max(abs(val) for val in lead_i_values)
-    min_amplitude = min(abs(val) for val in lead_i_values)
     
     if max_amplitude > 10 or std_dev > 5:
         return "noise"  # Too much noise or artifact
@@ -405,9 +410,9 @@ def assess_channel_quality(channel_data: List[float]) -> str:
     std_dev = math.sqrt(variance)
     max_amplitude = max(abs(val) for val in channel_data)
     
-    if max_amplitude > 50000 or std_dev > 20000:
+    if max_amplitude > 50 or std_dev > 20:
         return "noise"  # Too much noise or artifact
-    elif max_amplitude < 1000 or std_dev < 100:
+    elif max_amplitude < 0.1 or std_dev < 0.05:
         return "poor"  # Signal too weak or flat
     
     return "good"

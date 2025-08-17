@@ -33,10 +33,27 @@ function parse24BitSigned(byte0: number, byte1: number, byte2: number): number {
   // Combine bytes: b0 << 16 | b1 << 8 | b2
   const combined = (byte0 << 16) | (byte1 << 8) | byte2;
 
-  // Sign extension: shift left 8 bits then arithmetic right shift 8 bits
-  const signedValue = (combined << 8) >> 8;
+  // Check if the sign bit (bit 23) is set
+  if (combined & 0x800000) {  // Sign bit is set (negative number)
+    // Sign extend by ORing with 0xFF000000 and converting to signed 32-bit
+    return combined | 0xFF000000;
+  } else {
+    return combined;
+  }
+}
 
-  return signedValue;
+/**
+ * Convert raw ADC value to voltage (in mV)
+ * ADS1298 has 24-bit resolution with ±2.4V reference
+ */
+function adcToVoltage(adcValue: number, gain: number = 12): number {
+  const vref = 2.4;  // Reference voltage
+  const resolution = 24;  // 24-bit ADC
+  const maxValue = Math.pow(2, resolution - 1) - 1;  // 2^23 - 1
+  
+  // Convert to voltage and scale to millivolts
+  const voltage = ((adcValue / maxValue) * vref * 1000) / gain;
+  return voltage;
 }
 
 /**
@@ -71,8 +88,11 @@ export function parseADS1298SingleChannel(
 
       // Parse 24-bit signed integer from 3 bytes using proper sign extension
       const signedValue = parse24BitSigned(b0, b1, b2);
+      
+      // Convert raw ADC value to voltage (in mV)
+      const voltage = adcToVoltage(signedValue, 12);
 
-      samples.push(signedValue);
+      samples.push(voltage);
     }
   }
 
@@ -110,12 +130,12 @@ export function parseADS1298DataRaw(rawData: number[]): ParsedECGData {
       // Sign extension: shift left 8 bits then arithmetic right shift 8 bits
       const signedValue = (combined << 8) >> 8;
 
-      // Use raw ADC values directly (no voltage conversion)
-      const rawValue = signedValue;
+      // Convert raw ADC value to voltage (in mV)
+      const voltage = adcToVoltage(signedValue, 12);
 
       const sample: ADS1298Sample = {
-        leadI: rawValue,
-        leadII: rawValue, // Use real data, not synthetic
+        leadI: voltage,
+        leadII: voltage, // Use real data, not synthetic
         leadIII: 0, // Will be calculated from actual channels when available
         aVR: 0,
         aVL: 0,
@@ -171,10 +191,13 @@ export function parseADS1298Data(rawData: number[]): ParsedECGData {
 
       // Sign extension: shift left 8 bits then arithmetic right shift 8 bits
       const signedValue = (combined << 8) >> 8;
+      
+      // Convert raw ADC value to voltage (in mV)
+      const voltage = adcToVoltage(signedValue, 12);
 
       const sample: ADS1298Sample = {
-        leadI: signedValue,
-        leadII: signedValue,
+        leadI: voltage,
+        leadII: voltage,
         leadIII: 0,
         aVR: 0,
         aVL: 0,
@@ -379,9 +402,9 @@ export function assessChannelQuality(
   const stdDev = Math.sqrt(variance);
   const maxAmplitude = Math.max(...channelData.map(Math.abs));
 
-  if (maxAmplitude > 50000 || stdDev > 20000) {
+  if (maxAmplitude > 50 || stdDev > 20) {
     return "noise"; // Too much noise or artifact
-  } else if (maxAmplitude < 1000 || stdDev < 100) {
+  } else if (maxAmplitude < 0.1 || stdDev < 0.05) {
     return "poor"; // Signal too weak or flat
   }
 
