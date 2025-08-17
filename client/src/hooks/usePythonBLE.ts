@@ -48,6 +48,7 @@ export function usePythonBLE({ onECGData }: PythonBLEHookProps = {}) {
   const checkBLEStatus = useCallback(async () => {
     try {
       const status = await apiRequestJson<BLEStatusResponse>("GET", "/api/ble/status");
+      
       if (status.connected) {
         setBleStatus("connected");
         setConnectedDevice({
@@ -60,7 +61,6 @@ export function usePythonBLE({ onECGData }: PythonBLEHookProps = {}) {
         setConnectedDevice(null);
       }
     } catch (error) {
-      console.error("Failed to check BLE status:", error);
       setBleStatus("disconnected");
     }
   }, []);
@@ -92,7 +92,6 @@ export function usePythonBLE({ onECGData }: PythonBLEHookProps = {}) {
         setBleStatus("disconnected");
       }
     } catch (error) {
-      console.error("Scan error:", error);
       setBleStatus("disconnected");
       toast({
         title: "Scan Failed",
@@ -137,7 +136,7 @@ export function usePythonBLE({ onECGData }: PythonBLEHookProps = {}) {
             });
             queryClient.invalidateQueries({ queryKey: ["/api/ble-devices"] });
           } catch (dbError) {
-            console.warn("Failed to update device in backend:", dbError);
+            // Failed to update device in backend - handled silently
           }
 
           toast({
@@ -148,7 +147,6 @@ export function usePythonBLE({ onECGData }: PythonBLEHookProps = {}) {
           throw new Error("Connection failed");
         }
       } catch (error) {
-        console.error("Connection error:", error);
         setBleStatus("disconnected");
         
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -187,7 +185,7 @@ export function usePythonBLE({ onECGData }: PythonBLEHookProps = {}) {
           });
           queryClient.invalidateQueries({ queryKey: ["/api/ble-devices"] });
         } catch (dbError) {
-          console.warn("Failed to update device in backend:", dbError);
+          // Failed to update device in backend - handled silently
         }
 
         setDevices(prev =>
@@ -207,7 +205,6 @@ export function usePythonBLE({ onECGData }: PythonBLEHookProps = {}) {
         throw new Error("Disconnection failed");
       }
     } catch (error) {
-      console.error("Disconnection error:", error);
       toast({
         title: "Disconnection Error",
         description: "Failed to disconnect device via Python backend.",

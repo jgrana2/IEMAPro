@@ -10,7 +10,7 @@ import logoImage from "@assets/IEMAlogo.png";
 interface HeaderProps {
   onToggleLeft: () => void;
   onToggleRight: () => void;
-  bleStatus: "connected" | "disconnected" | "connecting";
+  bleStatus: "connected" | "disconnected" | "connecting" | "scanning";
   wsStatus: "connected" | "disconnected" | "connecting";
 }
 

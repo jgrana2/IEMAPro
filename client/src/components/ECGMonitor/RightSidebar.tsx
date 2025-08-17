@@ -54,7 +54,7 @@ export function RightSidebar({
 
   const handleGeneratePDF = (session: any) => {
     // TODO: Implement PDF generation
-    console.log("Generate PDF for session:", session);
+    // PDF generation handled silently
   };
 
   return (

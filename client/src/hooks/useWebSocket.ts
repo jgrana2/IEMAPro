@@ -35,7 +35,6 @@ export function useWebSocket() {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('WebSocket connected');
         setWsStatus('connected');
         reconnectAttempts.current = 0;
       };
@@ -43,6 +42,7 @@ export function useWebSocket() {
       ws.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
+          // console.log('WebSocket message received:', message);
           setLastMessage(message);
 
           // Handle ECG data from Python backend (both processed and raw)
@@ -69,60 +69,13 @@ export function useWebSocket() {
             setEcgData({ ...newBuffer });
             setHeartRate(message.heartRate || 75);
             setSignalQuality(message.quality || 'good');
-
-          } else if (message.type === 'ads1298_data' && message.rawData) {
-            // Raw ADS1298 data - parse it
-            try {
-              const parsedData: ParsedECGData = parseADS1298DataRaw(message.rawData);
-              const leadData = convertToECGFormat(parsedData);
-              const calculatedHeartRate = calculateHeartRateFromSamples(parsedData.samples, parsedData.sampleRate);
-
-              // Update ECG data buffer with rolling window
-              const maxBufferSize = 2500; // Keep ~5 seconds at 500Hz
-              const newBuffer = { ...ecgBufferRef.current };
-
-              Object.entries(leadData).forEach(([leadName, newSamples]) => {
-                if (!newBuffer[leadName]) {
-                  newBuffer[leadName] = [];
-                }
-                
-                // Append new samples
-                newBuffer[leadName] = [...newBuffer[leadName], ...newSamples];
-                
-                // Keep only the most recent samples
-                if (newBuffer[leadName].length > maxBufferSize) {
-                  newBuffer[leadName] = newBuffer[leadName].slice(-maxBufferSize);
-                }
-              });
-
-              ecgBufferRef.current = newBuffer;
-              setEcgData({ ...newBuffer });
-              setHeartRate(calculatedHeartRate);
-              setSignalQuality(parsedData.quality);
-
-              console.log(`ECG data parsed: ${parsedData.samples.length} samples, HR: ${calculatedHeartRate}, Quality: ${parsedData.quality}`);
-              console.log('Lead data keys:', Object.keys(leadData));
-              console.log('Lead I data length:', leadData['Lead I']?.length || 0);
-              console.log('Lead II data length:', leadData['Lead II']?.length || 0);
-              
-              // Check actual voltage values
-              if (leadData['Lead I']?.length > 0) {
-                console.log('Lead I sample values:', leadData['Lead I'].slice(-5)); // Last 5 values
-              }
-              if (leadData['Lead II']?.length > 0) {
-                console.log('Lead II sample values:', leadData['Lead II'].slice(-5)); // Last 5 values
-              }
-            } catch (parseError) {
-              console.error('Failed to parse ADS1298 data:', parseError);
-            }
           }
         } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
+          // Parse error handled silently
         }
       };
 
       ws.onclose = (event) => {
-        console.log('WebSocket disconnected:', event.code, event.reason);
         setWsStatus('disconnected');
         wsRef.current = null;
 
@@ -137,11 +90,9 @@ export function useWebSocket() {
       };
 
       ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
         setWsStatus('disconnected');
       };
     } catch (error) {
-      console.error('Failed to create WebSocket connection:', error);
       setWsStatus('disconnected');
     }
   }, []);
@@ -166,11 +117,9 @@ export function useWebSocket() {
         wsRef.current.send(JSON.stringify(message));
         return true;
       } catch (error) {
-        console.error('Failed to send WebSocket message:', error);
         return false;
       }
     } else {
-      console.warn('WebSocket is not connected');
       return false;
     }
   }, []);

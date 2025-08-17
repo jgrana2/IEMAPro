@@ -20,6 +20,11 @@ export function ECGCarousel({ leads, isActive }: ECGCarouselProps) {
   const [visibleLeads, setVisibleLeads] = useState(4);
   const carouselRef = useRef<HTMLDivElement>(null);
 
+  // Log the leads data received by the carousel
+  useEffect(() => {
+    // Leads data received and processed silently
+  }, [leads, isActive]);
+
   // Adjust visible leads based on screen size
   useEffect(() => {
     const updateVisibleLeads = () => {

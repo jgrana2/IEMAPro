@@ -111,6 +111,8 @@ export function ADS1298TestPanel({ onTestData }: ADS1298TestPanelProps) {
 
         onTestData(testData, testHeartRate, testQuality);
       }, 100); // Generate new data every 100ms
+    } else if (!isGeneratingTest) {
+      // Test data generation stopped - handled silently
     }
 
     return () => {
@@ -172,23 +174,13 @@ export function ADS1298TestPanel({ onTestData }: ADS1298TestPanelProps) {
     const testChannels = [1, 2, 3, 4]; // Test first 4 channels
     const allLeadData: { [leadName: string]: number[] } = {};
 
-    console.log("=== Testing Fixed ADS1298 Parser ===");
-
     testChannels.forEach((channelNumber) => {
       const rawData = generateChannelData(channelNumber);
-      console.log(`Testing Channel ${channelNumber}: ${rawData.length} bytes`);
 
       // Parse the channel data - use raw for channel 1 (Lead I), processed for others
       const channelSamples = parseADS1298SingleChannel(rawData, channelNumber);
       const heartRate = calculateHeartRateFromChannel(channelSamples);
       const quality = assessChannelQuality(channelSamples);
-
-      console.log(`Channel ${channelNumber} results:`, {
-        samples: channelSamples.length,
-        heartRate,
-        quality,
-        sampleRange: [Math.min(...channelSamples), Math.max(...channelSamples)],
-      });
 
       // Map to ECG leads
       const leadNames = [
@@ -212,7 +204,7 @@ export function ADS1298TestPanel({ onTestData }: ADS1298TestPanelProps) {
       onTestData(allLeadData, avgHeartRate, "good");
     }
 
-    console.log("=== Parser Test Complete ===");
+    // Parser test complete - handled silently
   }, [onTestData]);
 
   const getQualityColor = (quality: string) => {

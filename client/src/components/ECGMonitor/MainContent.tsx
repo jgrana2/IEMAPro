@@ -135,7 +135,6 @@ export function MainContent({
         description: `ECG report for ${currentPatient.name} has been downloaded.`,
       });
     } catch (error) {
-      console.error("PDF generation error:", error);
       toast({
         title: "PDF Generation Failed",
         description: "Failed to generate PDF report. Please try again.",
@@ -263,12 +262,32 @@ export function MainContent({
           </CardHeader>
           <CardContent className="p-6">
             <ECGCarousel
-              leads={ECG_LEADS.map((lead) => ({
-                ...lead,
-                data: ecgData[lead.name] || [],
-              }))}
+              leads={ECG_LEADS.map((lead) => {
+                // Log the raw lead object
+                // console.log("Lead:", lead);
+
+                // Get the data for this lead, or fallback to []
+                const leadData = ecgData[lead.name] || [];
+
+                // Log the data array
+                // console.log("Lead Data:", leadData);
+
+                // // Optionally log based on availability
+                // if (leadData.length > 0) {
+                //   console.log(`Mapped data for ${lead.name}, length: ${leadData.length}`);
+                // } else {
+                //   console.log(`No data available for ${lead.name}`);
+                // }
+
+                // Return the new object with data attached
+                return {
+                  ...lead,
+                  data: leadData,
+                };
+              })}
+              // Consider websocket connection as a valid active data source too
               isActive={
-                bleStatus === "connected" && Object.keys(ecgData).length > 0
+                (bleStatus === "connected" || wsStatus === "connected") && Object.keys(ecgData).length > 0
               }
             />
           </CardContent>

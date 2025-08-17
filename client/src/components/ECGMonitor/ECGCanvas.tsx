@@ -15,6 +15,17 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
   const lastDataLengthRef = useRef(0);
   const lastUpdateTimeRef = useRef(0);
 
+  // Add debug logging for signal data  
+  useEffect(() => {
+    if (data && data.length > 0) {
+      // ECG data received and processed silently
+      console.log(leadName, data);
+      
+    } else {
+      // No data or empty array - handled silently
+    }
+  }, [data, leadName, isActive]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -79,11 +90,9 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
       if (!isActive) return;
 
       const currentTime = Date.now();
-      const hasNewData = data.length !== lastDataLengthRef.current;
       const timeSinceLastUpdate = currentTime - lastUpdateTimeRef.current;
-      
-      // Only redraw if there's new data or enough time has passed (reduce flickering)
-      if (!hasNewData && timeSinceLastUpdate < 100) {
+
+      if (data.length === lastDataLengthRef.current && timeSinceLastUpdate < 16) {
         animationRef.current = requestAnimationFrame(drawECG);
         return;
       }
@@ -91,15 +100,11 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
       lastDataLengthRef.current = data.length;
       lastUpdateTimeRef.current = currentTime;
 
-      // Clear canvas
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-      
-      // Draw grid first
       drawGrid();
-      
-      // Set ECG line properties
+
       ctx.strokeStyle = '#EF4444'; // Medical red
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.5;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
@@ -107,60 +112,40 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
         ctx.beginPath();
         
         const centerY = canvasHeight / 2;
-        const amplitude = canvasHeight * 0.35; // Amplitude for ECG display
+        const samplesToDraw = data.length; // Show all available data (entire buffer)
         
-        // Use the most recent data points for real-time display
-        const displayPoints = Math.min(canvasWidth * 2, data.length);
-        const startIndex = Math.max(0, data.length - displayPoints);
+        const startIndex = Math.max(0, data.length - samplesToDraw);
         const displayData = data.slice(startIndex);
-        
-        // Calculate proper scaling for ECG voltage data
+
+        // Auto-scale for raw ADC values
         const minValue = Math.min(...displayData);
         const maxValue = Math.max(...displayData);
         const range = maxValue - minValue;
-        
-        // ECG-specific scaling for voltage values (mV)
-        let scaleFactor = 1;
-        if (range > 0) {
-          // Scale based on typical ECG voltage ranges
-          if (range < 0.1) {
-            scaleFactor = 50; // Very small signals
-          } else if (range < 1.0) {
-            scaleFactor = 20; // Small signals  
-          } else if (range < 3.0) {
-            scaleFactor = 10; // Normal ECG range
-          } else {
-            scaleFactor = 3 / range; // Large signals
-          }
-        }
-        
-        // Draw the ECG waveform smoothly
+        const baselineValue = (minValue + maxValue) / 2;
+        const amplitude = canvasHeight * 0.4; // Use 40% of canvas height
+
         for (let i = 0; i < displayData.length; i++) {
           const x = (i / displayData.length) * canvasWidth;
-          const rawValue = displayData[i];
-          
-          // Center around baseline and apply scaling
-          const baselineValue = (minValue + maxValue) / 2;
-          const normalizedValue = (rawValue - baselineValue) * scaleFactor;
-          
-          const y = Math.max(5, Math.min(canvasHeight - 5, centerY - (normalizedValue * amplitude)));
+          const normalizedValue = range > 0 ? (displayData[i] - baselineValue) / range : 0;
+          const y = centerY - (normalizedValue * amplitude);
           
           if (i === 0) {
             ctx.moveTo(x, y);
           } else {
             ctx.lineTo(x, y);
           }
+
+          // Log first few points for debugging - handled silently
+          if (i < 3) {
+            // Point debugging processed silently
+          }
         }
-        
         ctx.stroke();
-        
       } else {
         // Draw baseline when no data
         ctx.beginPath();
         ctx.moveTo(0, canvasHeight / 2);
         ctx.lineTo(canvasWidth, canvasHeight / 2);
-        ctx.strokeStyle = '#EF4444';
-        ctx.lineWidth = 1;
         ctx.stroke();
       }
 

@@ -13,7 +13,7 @@ import { Bot } from "lucide-react";
 export default function ECGMonitor() {
   const { leftExpanded, rightExpanded, toggleLeft, toggleRight } =
     useSidebarState();
-  const { wsStatus, sendMessage } = useWebSocketContext();
+  const { wsStatus, sendMessage, ecgData: wsEcgData, heartRate: wsHeartRate, signalQuality: wsSignalQuality } = useWebSocketContext();
 
   const [currentPatient, setCurrentPatient] = useState<any>(null);
   const [currentSession, setCurrentSession] = useState<any>(null);
@@ -30,6 +30,7 @@ export default function ECGMonitor() {
     hr: number,
     quality: string,
   ) => {
+
     // Update ECG data buffer with rolling window using functional state update
     const maxBufferSize = 2500; // Keep ~5 seconds at 500Hz
     
@@ -118,6 +119,20 @@ export default function ECGMonitor() {
     }
   };
 
+  // Prefer websocket ECG data if present, otherwise fall back to BLE-local data
+  const mergedEcgData = Object.keys(wsEcgData || {}).length ? wsEcgData : ecgData;
+  const mergedHeartRate = wsHeartRate || heartRate;
+  const mergedSignalQuality = wsSignalQuality || signalQuality;
+
+  // Log the merged data being passed to MainContent
+  useEffect(() => {
+    if (Object.keys(mergedEcgData).length > 0) {
+      // Merged ECG data processed silently
+    } else {
+      // No merged ECG data available - handled silently
+    }
+  }, [mergedEcgData, mergedHeartRate, mergedSignalQuality, wsEcgData, ecgData, wsStatus, bleStatus]);
+
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Left Sidebar */}
@@ -156,9 +171,9 @@ export default function ECGMonitor() {
               onStopRecording={() => setIsRecording(false)}
               bleStatus={bleStatus}
               wsStatus={wsStatus}
-              ecgData={ecgData}
-              heartRate={heartRate}
-              signalQuality={signalQuality}
+              ecgData={mergedEcgData}
+              heartRate={mergedHeartRate}
+              signalQuality={mergedSignalQuality}
               onTestData={handleECGData}
             />
           </div>

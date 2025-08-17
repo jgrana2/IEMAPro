@@ -40,20 +40,6 @@ function parse24BitSigned(byte0: number, byte1: number, byte2: number): number {
 }
 
 /**
- * Convert raw ADC value to voltage (in mV)
- * ADS1298 has 24-bit resolution with ±2.4V reference
- */
-function adcToVoltage(adcValue: number, gain: number = 12): number {
-  const vref = 2.4; // Reference voltage
-  const resolution = 24; // 24-bit ADC
-  const maxValue = Math.pow(2, resolution - 1) - 1; // 2^23 - 1
-
-  // Convert to voltage and scale to millivolts
-  const voltage = ((adcValue / maxValue) * vref * 1000) / gain;
-  return voltage;
-}
-
-/**
  * Parse single channel ADS1298 ECG data from BLE characteristic
  * Each characteristic (8171-8178) contains 28 samples of 24-bit data for one channel
  * @param rawData - Array of bytes (should be 84 bytes = 28 samples * 3 bytes each)
@@ -64,16 +50,13 @@ export function parseADS1298SingleChannel(
   channelNumber: number,
 ): number[] {
   if (!rawData || rawData.length === 0) {
-    console.warn(`No data provided for channel ${channelNumber}`);
     return [];
   }
 
   // Expected: 28 samples * 3 bytes = 84 bytes
   const expectedBytes = 28 * 3;
   if (rawData.length !== expectedBytes) {
-    console.warn(
-      `Channel ${channelNumber}: Expected ${expectedBytes} bytes, got ${rawData.length} bytes`,
-    );
+    // Warning: unexpected byte count - handled silently
   }
 
   const samples: number[] = [];
@@ -89,10 +72,7 @@ export function parseADS1298SingleChannel(
       // Parse 24-bit signed integer from 3 bytes using proper sign extension
       const signedValue = parse24BitSigned(b0, b1, b2);
 
-      // Convert raw ADC value to voltage (in mV) for proper ECG display
-      const voltage = adcToVoltage(signedValue, 12); // Use gain of 12 for typical ECG
-
-      samples.push(voltage);
+      samples.push(signedValue);
     }
   }
 
@@ -117,10 +97,6 @@ export function parseADS1298DataRaw(rawData: number[]): ParsedECGData {
 
   // Handle data format with 3-byte samples (following Swift reference pattern)
   const count = Math.floor(rawData.length / 3); // Each sample is 3 bytes
-  console.log(
-    `Processing ${rawData.length} bytes as ${count} raw samples (no processing)`,
-  );
-
   for (let i = 0; i < count; i++) {
     const startIndex = i * 3;
     if (startIndex + 2 < rawData.length) {
@@ -137,12 +113,9 @@ export function parseADS1298DataRaw(rawData: number[]): ParsedECGData {
       // Use raw ADC values directly (no voltage conversion)
       const rawValue = signedValue;
 
-      // Use actual ECG data from the device without artificial patterns
-      const voltage = adcToVoltage(rawValue, 12); // Convert to voltage for proper ECG display
-
       const sample: ADS1298Sample = {
-        leadI: voltage,
-        leadII: voltage, // Use real data, not synthetic
+        leadI: rawValue,
+        leadII: rawValue, // Use real data, not synthetic
         leadIII: 0, // Will be calculated from actual channels when available
         aVR: 0,
         aVL: 0,
@@ -158,10 +131,6 @@ export function parseADS1298DataRaw(rawData: number[]): ParsedECGData {
       samples.push(sample);
     }
   }
-
-  console.log(
-    `Parsed ${samples.length} raw ECG samples from channels 8171/8172`,
-  );
 
   return {
     samples,
@@ -189,7 +158,6 @@ export function parseADS1298Data(rawData: number[]): ParsedECGData {
 
   // Handle data format with 3-byte samples (following Swift reference pattern)
   const count = Math.floor(rawData.length / 3); // Each sample is 3 bytes
-  console.log(`Processing ${rawData.length} bytes as ${count} samples`);
 
   for (let i = 0; i < count; i++) {
     const startIndex = i * 3;
@@ -204,20 +172,13 @@ export function parseADS1298Data(rawData: number[]): ParsedECGData {
       // Sign extension: shift left 8 bits then arithmetic right shift 8 bits
       const signedValue = (combined << 8) >> 8;
 
-      // Convert to voltage (raw ADC value to mV)
-      const voltage = adcToVoltage(signedValue, 12);
-
-      // For now, treat as Lead I data and calculate derived leads
-      const leadI = voltage;
-      const leadII = voltage * 0.85 + Math.sin(i * 0.1) * 0.2; // Some variation for visualization
-
       const sample: ADS1298Sample = {
-        leadI,
-        leadII,
-        leadIII: leadII - leadI, // Standard ECG calculation
-        aVR: -(leadI + leadII) / 2,
-        aVL: leadI - leadII / 2,
-        aVF: leadII - leadI / 2,
+        leadI: signedValue,
+        leadII: signedValue,
+        leadIII: 0,
+        aVR: 0,
+        aVL: 0,
+        aVF: 0,
         V1: 0,
         V2: 0,
         V3: 0,
@@ -230,46 +191,12 @@ export function parseADS1298Data(rawData: number[]): ParsedECGData {
     }
   }
 
-  const quality = assessSignalQuality(samples);
-  console.log(
-    `Parsed ${samples.length} ECG samples from channels 8171/8172, quality: ${quality}`,
-  );
-
   return {
     samples,
     timestamp: Date.now(),
     sampleRate: 250,
-    quality,
+    quality: "good",
   };
-}
-
-/**
- * Assess signal quality based on ECG characteristics (voltage values)
- */
-function assessSignalQuality(
-  samples: ADS1298Sample[],
-): "good" | "poor" | "noise" {
-  if (samples.length === 0) return "poor";
-
-  // Calculate signal variance for Lead I (only available lead)
-  const leadIValues = samples.map((s) => s.leadI);
-  const mean = leadIValues.reduce((a, b) => a + b, 0) / leadIValues.length;
-  const variance =
-    leadIValues.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) /
-    leadIValues.length;
-  const stdDev = Math.sqrt(variance);
-
-  // Check for reasonable ECG amplitude (0.1 - 5 mV typical)
-  const maxAmplitude = Math.max(...leadIValues.map(Math.abs));
-  const minAmplitude = Math.min(...leadIValues.map(Math.abs));
-
-  if (maxAmplitude > 10 || stdDev > 5) {
-    return "noise"; // Too much noise or artifact
-  } else if (maxAmplitude < 0.05 || stdDev < 0.01) {
-    return "poor"; // Signal too weak or flat
-  }
-
-  return "good";
 }
 
 /**
@@ -296,9 +223,16 @@ export function convertToECGFormat(parsedData: ParsedECGData): {
   const result: { [leadName: string]: number[] } = {};
 
   Object.entries(leadMapping).forEach(([leadName, sampleKey]) => {
-    result[leadName] = parsedData.samples.map(
+    // Collect raw values for this lead
+    const raw = parsedData.samples.map(
       (sample) => sample[sampleKey as keyof ADS1298Sample],
     );
+
+    // Return raw signal without any filtering
+    result[leadName] = raw;
+    
+    // REMOVED: Apply baseline-wander removal only (simple high-pass via exponential moving average)
+    // result[leadName] = removeBaselineWander(raw, parsedData.sampleRate || 250);
   });
 
   return result;

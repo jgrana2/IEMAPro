@@ -96,9 +96,9 @@ def parse_ads1298_single_channel(raw_data: List[int], channel_number: int) -> Li
             signed_value = parse_24bit_signed(b0, b1, b2)
             
             # Convert raw ADC value to voltage (in mV) for proper ECG display
-            voltage = adc_to_voltage(signed_value, 12)  # Use gain of 12 for typical ECG
+            # voltage = adc_to_voltage(signed_value, 12)  # Use gain of 12 for typical ECG
             
-            samples.append(voltage)
+            samples.append(signed_value)
     
     return samples
 
