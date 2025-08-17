@@ -190,13 +190,18 @@ export function LeftSidebar({
                       bleStatus === "connected" ? "secondary" : "outline"
                     }
                     disabled={
-                      bleStatus === "connecting" || bleStatus === "connected"
+                      bleStatus === "connecting" || bleStatus === "connected" || bleStatus === "scanning"
                     }
                   >
                     {bleStatus === "connecting" ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-current" />
                         Connecting...
+                      </>
+                    ) : bleStatus === "scanning" ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-current" />
+                        Scanning...
                       </>
                     ) : bleStatus === "connected" ? (
                       <>
@@ -304,7 +309,7 @@ export function LeftSidebar({
                   )}
 
                   {/* Available Devices (when not connected) */}
-                  {bleStatus === "disconnected" && bleDevices.length > 0 && (
+                  {(bleStatus === "disconnected" || bleStatus === "scanning") && bleDevices.length > 0 && (
                     <div className="space-y-2">
                       <Label className="text-xs text-muted-foreground">
                         Found Devices - Tap to Connect
@@ -316,7 +321,7 @@ export function LeftSidebar({
                             <Card
                               key={device.id}
                               className="cursor-pointer hover:bg-accent hover:border-primary/50 transition-colors"
-                              onClick={() => onConnectDevice(device.deviceId)}
+                              onClick={() => bleStatus !== "scanning" && onConnectDevice(device.id)}
                             >
                               <CardContent className="p-3">
                                 <div className="flex items-center justify-between">
@@ -333,7 +338,7 @@ export function LeftSidebar({
                                     </div>
                                   </div>
                                   <div className="text-xs text-muted-foreground">
-                                    ▶
+                                    {bleStatus === "scanning" ? "⋯" : "▶"}
                                   </div>
                                 </div>
                               </CardContent>

@@ -12,7 +12,8 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  const fullUrl = url.startsWith('/api') ? `${API_BASE_URL.replace('/api', '')}${url}` : url;
+  const res = await fetch(fullUrl, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -23,13 +24,24 @@ export async function apiRequest(
   return res;
 }
 
+export async function apiRequestJson<T = any>(
+  method: string,
+  url: string,
+  data?: unknown | undefined,
+): Promise<T> {
+  const res = await apiRequest(method, url, data);
+  return await res.json();
+}
+
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    const url = queryKey[0] as string;
+    const fullUrl = url.startsWith('/api') ? `${API_BASE_URL.replace('/api', '')}${url}` : url;
+    const res = await fetch(fullUrl, {
       credentials: "include",
     });
 
@@ -56,4 +68,4 @@ export const queryClient = new QueryClient({
   },
 });
 
-const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : '/api';
+const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:8000/api' : '/api';

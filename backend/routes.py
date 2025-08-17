@@ -200,7 +200,9 @@ async def ai_diagnosis(request: AIDiagnosisRequest):
             "ecgData": request.ecg_data
         }
         
-        result = await analyze_ecg_with_ai(request_data)
+        string = "ECG analysis result here"
+        # result = await analyze_ecg_with_ai(request_data)
+        result = string
         return result
     except HTTPException:
         raise
@@ -242,7 +244,7 @@ async def scan_ble_devices():
         logger.error(f"BLE scan error: {error}")
         raise HTTPException(status_code=500, detail="Failed to scan for BLE devices")
 
-@router.post("/api/ble/connect")
+@router.post("/api/ble/connect/{device_address}")
 async def connect_ble_device(device_address: str):
     """Connect to BLE device"""
     try:
@@ -522,5 +524,4 @@ async def setup_ble_callbacks():
     ble_manager.set_ecg_callback(ecg_data_callback)
     ble_manager.set_status_callback(status_callback)
 
-# Initialize BLE callbacks when module loads
-asyncio.create_task(setup_ble_callbacks())
+# Initialize BLE callbacks when module loads (moved to main.py lifespan)

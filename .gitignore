@@ -7,3 +7,5 @@ vite.config.ts.*
 backend/__pycache__/
 backend/env/
 backend/ecg_monitor.db
+backend/.venv/
+logs/

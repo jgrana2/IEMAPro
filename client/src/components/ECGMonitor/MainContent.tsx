@@ -17,7 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import { generateECGReport, downloadPDF } from "@/lib/pdf-generator";
 import { useToast } from "@/hooks/use-toast";
 import { generateSimulatedECGData, ECGData } from "@/lib/ecg-utils";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useWebSocketContext } from "@/contexts/WebSocketContext";
 
 interface MainContentProps {
   currentPatient: any;
@@ -69,7 +69,7 @@ export function MainContent({
   const { toast } = useToast();
 
   // Get WebSocket functions for sending data (if needed)
-  const { sendADS1298Data } = useWebSocket();
+  const { sendADS1298Data } = useWebSocketContext();
 
   const { data: systemLogs = [] } = useQuery({
     queryKey: ["/api/system-logs"],

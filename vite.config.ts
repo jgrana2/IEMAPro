@@ -31,11 +31,11 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: `http://localhost:${process.env.BACKEND_PORT || 8000}`,
         changeOrigin: true,
       },
       '/ws': {
-        target: 'ws://localhost:5000',
+        target: `ws://localhost:${process.env.BACKEND_PORT || 8000}`,
         ws: true,
       },
     },

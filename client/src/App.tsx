@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import NotFound from "@/pages/not-found";
 import ECGMonitor from "@/pages/ecg-monitor";
 
@@ -19,10 +20,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <WebSocketProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </WebSocketProvider>
     </QueryClientProvider>
   );
 }

@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, apiRequestJson, queryClient } from "@/lib/queryClient";
 
 interface BluetoothDevice {
   id: string;
@@ -18,9 +18,22 @@ interface PythonBLEHookProps {
   ) => void;
 }
 
+interface BLEStatusResponse {
+  connected: boolean;
+  device_name?: string;
+  device_address?: string;
+  enabled_channels?: number;
+  scanning?: boolean;
+}
+
+interface BLEResponse {
+  success: boolean;
+  message: string;
+}
+
 export function usePythonBLE({ onECGData }: PythonBLEHookProps = {}) {
   const [bleStatus, setBleStatus] = useState<
-    "connected" | "disconnected" | "connecting"
+    "connected" | "disconnected" | "connecting" | "scanning"
   >("disconnected");
   const [devices, setDevices] = useState<BluetoothDevice[]>([]);
   const [connectedDevice, setConnectedDevice] =
@@ -34,12 +47,12 @@ export function usePythonBLE({ onECGData }: PythonBLEHookProps = {}) {
 
   const checkBLEStatus = useCallback(async () => {
     try {
-      const status = await apiRequest("GET", "/api/ble/status");
+      const status = await apiRequestJson<BLEStatusResponse>("GET", "/api/ble/status");
       if (status.connected) {
         setBleStatus("connected");
         setConnectedDevice({
-          id: status.device_address,
-          name: status.device_name,
+          id: status.device_address || "",
+          name: status.device_name || "IoT Holter",
           isConnected: true,
         });
       } else {
@@ -53,7 +66,7 @@ export function usePythonBLE({ onECGData }: PythonBLEHookProps = {}) {
   }, []);
 
   const scanDevices = useCallback(async () => {
-    setBleStatus("connecting");
+    setBleStatus("scanning");
     
     try {
       toast({
@@ -61,20 +74,20 @@ export function usePythonBLE({ onECGData }: PythonBLEHookProps = {}) {
         description: "Looking for IoT Holter ECG devices...",
       });
 
-      const scannedDevices = await apiRequest("POST", "/api/ble/scan");
+      const scannedDevices = await apiRequestJson<BluetoothDevice[]>("POST", "/api/ble/scan");
       setDevices(scannedDevices);
 
       if (scannedDevices.length === 0) {
         toast({
           title: "No Devices Found",
-          description: "No IoT Holter devices were found nearby.",
+          description: "No IoT Holter devices were found nearby. Make sure your device is powered on and in pairing mode.",
           variant: "destructive",
         });
         setBleStatus("disconnected");
       } else {
         toast({
           title: "Devices Found",
-          description: `Found ${scannedDevices.length} IoT Holter device(s)`,
+          description: `Found ${scannedDevices.length} IoT Holter device(s). Tap a device to connect.`,
         });
         setBleStatus("disconnected");
       }
@@ -83,7 +96,7 @@ export function usePythonBLE({ onECGData }: PythonBLEHookProps = {}) {
       setBleStatus("disconnected");
       toast({
         title: "Scan Failed",
-        description: "Failed to scan for BLE devices. Check Python backend.",
+        description: "Failed to scan for BLE devices. Please check that the Python backend is running and Bluetooth is enabled.",
         variant: "destructive",
       });
     }
@@ -99,9 +112,7 @@ export function usePythonBLE({ onECGData }: PythonBLEHookProps = {}) {
           description: "Connecting to IoT Holter device via Python backend",
         });
 
-        const response = await apiRequest("POST", "/api/ble/connect", {
-          device_address: deviceId,
-        });
+        const response = await apiRequestJson<BLEResponse>("POST", `/api/ble/connect/${deviceId}`);
 
         if (response.success) {
           setBleStatus("connected");
@@ -139,9 +150,15 @@ export function usePythonBLE({ onECGData }: PythonBLEHookProps = {}) {
       } catch (error) {
         console.error("Connection error:", error);
         setBleStatus("disconnected");
+        
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const isNetworkError = errorMessage.includes("fetch") || errorMessage.includes("Failed to fetch");
+        
         toast({
           title: "Connection Failed",
-          description: "Failed to connect to device via Python backend.",
+          description: isNetworkError 
+            ? "Cannot connect to Python backend. Please ensure the backend server is running."
+            : `Failed to connect to device: ${errorMessage}`,
           variant: "destructive",
         });
       }
@@ -160,7 +177,7 @@ export function usePythonBLE({ onECGData }: PythonBLEHookProps = {}) {
     }
 
     try {
-      const response = await apiRequest("POST", "/api/ble/disconnect");
+      const response = await apiRequestJson<BLEResponse>("POST", "/api/ble/disconnect");
 
       if (response.success) {
         // Update backend device status

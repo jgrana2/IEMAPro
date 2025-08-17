@@ -26,7 +26,9 @@ export function useWebSocket() {
     setWsStatus('connecting');
     
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = url || `${protocol}//${window.location.host}/ws`;
+    // Connect to Python backend on port 8000 for BLE functionality
+    const pythonBackendHost = window.location.hostname === 'localhost' ? 'localhost:8000' : window.location.host;
+    const wsUrl = url || `${protocol}//${pythonBackendHost}/ws`;
     
     try {
       const ws = new WebSocket(wsUrl);

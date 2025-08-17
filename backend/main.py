@@ -74,7 +74,7 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify exact origins
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # Specific origins when using credentials
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -170,11 +170,11 @@ except Exception as e:
 if __name__ == "__main__":
     import uvicorn
     
-    # Run the server on port 3000 (frontend + backend combined)
+    # Run the server on port 8000 (consistent with script default)
     uvicorn.run(
         "main:app",
-        host="127.0.0.1",  # Use localhost instead of 0.0.0.0 to avoid socket issues on macOS
-        port=3000,
+        host="0.0.0.0",  # Match the script's uvicorn command
+        port=8000,
         reload=True,
         log_level="info"
     )

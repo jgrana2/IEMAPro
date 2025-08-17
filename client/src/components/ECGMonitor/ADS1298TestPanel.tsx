@@ -12,7 +12,7 @@ import {
   Square,
   TestTube,
 } from "lucide-react";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useWebSocketContext } from "@/contexts/WebSocketContext";
 import {
   parseADS1298SingleChannel,
   calculateHeartRateFromChannel,
@@ -28,7 +28,7 @@ interface ADS1298TestPanelProps {
 }
 
 export function ADS1298TestPanel({ onTestData }: ADS1298TestPanelProps) {
-  const { ecgData, heartRate, signalQuality, wsStatus } = useWebSocket();
+  const { ecgData, heartRate, signalQuality, wsStatus } = useWebSocketContext();
   const [isGeneratingTest, setIsGeneratingTest] = useState(false);
 
   // Generate realistic ECG test data

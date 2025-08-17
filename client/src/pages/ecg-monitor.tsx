@@ -6,14 +6,14 @@ import { MainContent } from "@/components/ECGMonitor/MainContent";
 import { AIDiagnosisPanel } from "@/components/ECGMonitor/AIDiagnosisPanel";
 import { ADS1298TestPanel } from "@/components/ECGMonitor/ADS1298TestPanel";
 import { useSidebarState } from "@/hooks/useSidebarState";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useWebSocketContext } from "@/contexts/WebSocketContext";
 import { usePythonBLE } from "@/hooks/usePythonBLE";
 import { Bot } from "lucide-react";
 
 export default function ECGMonitor() {
   const { leftExpanded, rightExpanded, toggleLeft, toggleRight } =
     useSidebarState();
-  const { wsStatus, sendMessage } = useWebSocket();
+  const { wsStatus, sendMessage } = useWebSocketContext();
 
   const [currentPatient, setCurrentPatient] = useState<any>(null);
   const [currentSession, setCurrentSession] = useState<any>(null);
