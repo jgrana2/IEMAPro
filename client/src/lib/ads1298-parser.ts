@@ -309,69 +309,134 @@ export function calculateHeartRateFromSamples(
   samples: ADS1298Sample[],
   sampleRate: number = 250,
 ): number {
-  if (samples.length < sampleRate) return 0; // Need at least 1 second of data
+  if (samples.length < 50) return 60; // Need at least 0.2 seconds of data
 
   // Use Lead I for heart rate calculation (only available lead)
   const leadI = samples.map((s) => s.leadI);
 
-  // Simple peak detection for R-waves
-  const peaks: number[] = [];
-  const threshold = Math.max(...leadI) * 0.6; // 60% of max amplitude
+  // Improved peak detection for R-waves
+  let peaks: number[] = [];
+  
+  // Calculate adaptive threshold using signal statistics
+  const meanVal = leadI.reduce((a, b) => a + b, 0) / leadI.length;
+  const maxVal = Math.max(...leadI);
+  const minVal = Math.min(...leadI);
+  
+  // Use adaptive threshold: mean + 70% of range above mean
+  let threshold = meanVal + (maxVal - meanVal) * 0.7;
+  
+  // Minimum peak separation (300ms for max 200 BPM)
+  const minPeakDistance = Math.floor(sampleRate * 0.3);
 
   for (let i = 1; i < leadI.length - 1; i++) {
+    // R-wave detection: local maximum above threshold
     if (
       leadI[i] > threshold &&
       leadI[i] > leadI[i - 1] &&
       leadI[i] > leadI[i + 1]
     ) {
-      // Ensure peaks are at least 200ms apart (300 BPM max)
-      if (
-        peaks.length === 0 ||
-        i - peaks[peaks.length - 1] > sampleRate * 0.2
-      ) {
+      // Ensure peaks are sufficiently separated
+      if (peaks.length === 0 || i - peaks[peaks.length - 1] > minPeakDistance) {
         peaks.push(i);
       }
     }
   }
 
-  if (peaks.length < 2) return 0;
+  if (peaks.length < 2) {
+    // If no peaks detected, try with lower threshold
+    threshold = meanVal + (maxVal - meanVal) * 0.4;
+    peaks = [];
+    for (let i = 1; i < leadI.length - 1; i++) {
+      if (
+        leadI[i] > threshold &&
+        leadI[i] > leadI[i - 1] &&
+        leadI[i] > leadI[i + 1]
+      ) {
+        if (peaks.length === 0 || i - peaks[peaks.length - 1] > minPeakDistance) {
+          peaks.push(i);
+        }
+      }
+    }
+  }
 
-  // Calculate average RR interval
+  if (peaks.length < 2) return 60; // Default if still no peaks detected
+
+  // Calculate RR intervals (in samples)
   const rrIntervals = [];
   for (let i = 1; i < peaks.length; i++) {
     rrIntervals.push(peaks[i] - peaks[i - 1]);
   }
 
-  const avgRRInterval =
-    rrIntervals.reduce((a, b) => a + b, 0) / rrIntervals.length;
+  // Remove outliers (RR intervals that are too short or too long)
+  const filteredIntervals = rrIntervals.filter(interval => {
+    // Accept intervals corresponding to 40-180 BPM
+    return interval >= sampleRate * 0.33 && interval <= sampleRate * 1.5;
+  });
+
+  if (filteredIntervals.length === 0) return 60;
+
+  // Calculate average RR interval
+  const avgRRInterval = filteredIntervals.reduce((a, b) => a + b, 0) / filteredIntervals.length;
   const avgRRSeconds = avgRRInterval / sampleRate;
 
-  return Math.round(60 / avgRRSeconds); // Convert to BPM
+  // Calculate BPM
+  const heartRate = Math.round(60 / avgRRSeconds);
+  
+  // Clamp to physiological range
+  return Math.max(40, Math.min(180, heartRate));
 }
 
 /**
  * Calculate heart rate from single channel ECG data
  */
-export function calculateHeartRateFromChannel(channelData: number[]): number {
-  if (channelData.length < 2) return 75;
+export function calculateHeartRateFromChannel(channelData: number[], sampleRate: number = 250): number {
+  if (channelData.length < 50) return 60; // Need at least 0.2 seconds of data
 
-  // Find R-peaks (simplified peak detection)
-  const peaks: number[] = [];
+  // Improved R-wave detection
+  let peaks: number[] = [];
+  
+  // Calculate signal statistics for adaptive threshold
+  const meanVal = channelData.reduce((a, b) => a + b, 0) / channelData.length;
   const maxValue = Math.max(...channelData);
   const minValue = Math.min(...channelData);
-  const threshold = minValue + (maxValue - minValue) * 0.6;
+  
+  // Use adaptive threshold: mean + 70% of positive range
+  let threshold = meanVal + (maxValue - meanVal) * 0.7;
+  
+  // Minimum peak separation (300ms for max 200 BPM)
+  const minPeakDistance = Math.floor(sampleRate * 0.3);
 
   for (let i = 1; i < channelData.length - 1; i++) {
     if (
+      channelData[i] > threshold &&
       channelData[i] > channelData[i - 1] &&
-      channelData[i] > channelData[i + 1] &&
-      channelData[i] > threshold
+      channelData[i] > channelData[i + 1]
     ) {
-      peaks.push(i);
+      // Ensure peaks are sufficiently separated
+      if (peaks.length === 0 || i - peaks[peaks.length - 1] > minPeakDistance) {
+        peaks.push(i);
+      }
     }
   }
 
-  if (peaks.length < 2) return 75;
+  if (peaks.length < 2) {
+    // Try with lower threshold if no peaks found
+    threshold = meanVal + (maxValue - meanVal) * 0.4;
+    peaks = [];
+    for (let i = 1; i < channelData.length - 1; i++) {
+      if (
+        channelData[i] > threshold &&
+        channelData[i] > channelData[i - 1] &&
+        channelData[i] > channelData[i + 1]
+      ) {
+        if (peaks.length === 0 || i - peaks[peaks.length - 1] > minPeakDistance) {
+          peaks.push(i);
+        }
+      }
+    }
+  }
+
+  if (peaks.length < 2) return 60;
 
   // Calculate RR intervals
   const intervals = [];
@@ -379,12 +444,19 @@ export function calculateHeartRateFromChannel(channelData: number[]): number {
     intervals.push(peaks[i] - peaks[i - 1]);
   }
 
-  const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-  const sampleRate = 250; // ADS1298 sample rate
+  // Filter out unrealistic intervals (corresponding to <40 or >180 BPM)
+  const filteredIntervals = intervals.filter(interval => {
+    return interval >= sampleRate * 0.33 && interval <= sampleRate * 1.5; // 40-180 BPM range
+  });
+
+  if (filteredIntervals.length === 0) return 60;
+
+  // Calculate average interval and convert to BPM
+  const avgInterval = filteredIntervals.reduce((a, b) => a + b, 0) / filteredIntervals.length;
   const heartRate = Math.round((60 * sampleRate) / avgInterval);
 
-  // Clamp to reasonable range
-  return Math.max(40, Math.min(200, heartRate));
+  // Final clamp to physiological range
+  return Math.max(40, Math.min(180, heartRate));
 }
 
 /**

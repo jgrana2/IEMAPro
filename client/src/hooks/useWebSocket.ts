@@ -67,7 +67,7 @@ export function useWebSocket() {
 
             ecgBufferRef.current = newBuffer;
             setEcgData({ ...newBuffer });
-            setHeartRate(message.heartRate || 75);
+            setHeartRate(message.heartRate || 60);
             setSignalQuality(message.quality || 'good');
           }
         } catch (error) {

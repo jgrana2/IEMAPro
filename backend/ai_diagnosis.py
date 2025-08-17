@@ -139,7 +139,7 @@ Always emphasize that AI analysis supplements but does not replace professional 
         In a real implementation, this would use QRS complex detection
         """
         if not ecg_data or len(ecg_data) == 0:
-            return 75
+            return 60
         
         # Simulate heart rate based on data patterns
         import random

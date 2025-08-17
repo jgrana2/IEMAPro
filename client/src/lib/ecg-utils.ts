@@ -21,7 +21,7 @@ export const ECG_LEAD_NAMES = [
 export function generateSimulatedECGData(leadName: string, timestamp: number): number {
   // Simulate different ECG patterns for different leads
   const time = timestamp / 1000; // Convert to seconds
-  const heartRateHz = 1.2; // 72 BPM
+  const heartRateHz = 1.0; // 60 BPM
   const beatPhase = (time * heartRateHz) % 1;
   
   let amplitude = 1.0;

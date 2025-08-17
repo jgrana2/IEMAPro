@@ -331,72 +331,139 @@ def convert_to_ecg_format(parsed_data: ParsedECGData) -> Dict[str, List[float]]:
 
 def calculate_heart_rate_from_samples(samples: List[ADS1298Sample], sample_rate: int = 250) -> int:
     """
-    Calculate heart rate from ECG samples
+    Calculate heart rate from ECG samples using improved R-wave detection
     """
-    if len(samples) < sample_rate:
-        return 0  # Need at least 1 second of data
+    if len(samples) < 50:  # Need at least 0.2 seconds of data (more reasonable)
+        return 60  # Default reasonable heart rate
     
     # Use Lead I for heart rate calculation (only available lead)
     lead_i = [s.leadI for s in samples]
     
-    # Simple peak detection for R-waves
+    # Improved peak detection for R-waves
     peaks = []
-    threshold = max(lead_i) * 0.6  # 60% of max amplitude
+    
+    # Calculate adaptive threshold using signal statistics
+    mean_val = sum(lead_i) / len(lead_i)
+    max_val = max(lead_i)
+    min_val = min(lead_i)
+    
+    # Use adaptive threshold: mean + 70% of range above mean
+    threshold = mean_val + (max_val - mean_val) * 0.7
+    
+    # Minimum peak separation (300ms for max 200 BPM)
+    min_peak_distance = int(sample_rate * 0.3)
     
     for i in range(1, len(lead_i) - 1):
+        # R-wave detection: local maximum above threshold
         if (lead_i[i] > threshold and 
             lead_i[i] > lead_i[i - 1] and 
             lead_i[i] > lead_i[i + 1]):
-            # Ensure peaks are at least 200ms apart (300 BPM max)
-            if len(peaks) == 0 or i - peaks[-1] > sample_rate * 0.2:
+            # Ensure peaks are sufficiently separated
+            if len(peaks) == 0 or i - peaks[-1] > min_peak_distance:
                 peaks.append(i)
     
     if len(peaks) < 2:
-        return 0
+        # If no peaks detected, try with lower threshold
+        threshold = mean_val + (max_val - mean_val) * 0.4
+        peaks = []
+        for i in range(1, len(lead_i) - 1):
+            if (lead_i[i] > threshold and 
+                lead_i[i] > lead_i[i - 1] and 
+                lead_i[i] > lead_i[i + 1]):
+                if len(peaks) == 0 or i - peaks[-1] > min_peak_distance:
+                    peaks.append(i)
     
-    # Calculate average RR interval
+    if len(peaks) < 2:
+        return 60  # Default if still no peaks detected
+    
+    # Calculate RR intervals (in samples)
     rr_intervals = []
     for i in range(1, len(peaks)):
         rr_intervals.append(peaks[i] - peaks[i - 1])
     
-    avg_rr_interval = sum(rr_intervals) / len(rr_intervals)
+    # Remove outliers (RR intervals that are too short or too long)
+    filtered_intervals = []
+    for interval in rr_intervals:
+        # Accept intervals corresponding to 40-180 BPM
+        if sample_rate * 0.33 <= interval <= sample_rate * 1.5:  # 40-180 BPM range
+            filtered_intervals.append(interval)
+    
+    if len(filtered_intervals) == 0:
+        return 60
+    
+    # Calculate average RR interval
+    avg_rr_interval = sum(filtered_intervals) / len(filtered_intervals)
     avg_rr_seconds = avg_rr_interval / sample_rate
     
-    return round(60 / avg_rr_seconds)  # Convert to BPM
-
-def calculate_heart_rate_from_channel(channel_data: List[float]) -> int:
-    """
-    Calculate heart rate from single channel ECG data
-    """
-    if len(channel_data) < 2:
-        return 75
+    # Calculate BPM
+    heart_rate = round(60 / avg_rr_seconds)
     
-    # Find R-peaks (simplified peak detection)
+    # Clamp to physiological range
+    return max(40, min(180, heart_rate))
+
+def calculate_heart_rate_from_channel(channel_data: List[float], sample_rate: int = 250) -> int:
+    """
+    Calculate heart rate from single channel ECG data using improved algorithm
+    """
+    if len(channel_data) < 50:  # Need at least 0.2 seconds of data
+        return 60
+    
+    # Improved R-wave detection
     peaks = []
+    
+    # Calculate signal statistics for adaptive threshold
+    mean_val = sum(channel_data) / len(channel_data)
     max_value = max(channel_data)
     min_value = min(channel_data)
-    threshold = min_value + (max_value - min_value) * 0.6
+    
+    # Use adaptive threshold: mean + 70% of positive range
+    threshold = mean_val + (max_value - mean_val) * 0.7
+    
+    # Minimum peak separation (300ms for max 200 BPM)
+    min_peak_distance = int(sample_rate * 0.3)
     
     for i in range(1, len(channel_data) - 1):
-        if (channel_data[i] > channel_data[i - 1] and
-            channel_data[i] > channel_data[i + 1] and
-            channel_data[i] > threshold):
-            peaks.append(i)
+        if (channel_data[i] > threshold and
+            channel_data[i] > channel_data[i - 1] and
+            channel_data[i] > channel_data[i + 1]):
+            # Ensure peaks are sufficiently separated
+            if len(peaks) == 0 or i - peaks[-1] > min_peak_distance:
+                peaks.append(i)
     
     if len(peaks) < 2:
-        return 75
+        # Try with lower threshold if no peaks found
+        threshold = mean_val + (max_value - mean_val) * 0.4
+        peaks = []
+        for i in range(1, len(channel_data) - 1):
+            if (channel_data[i] > threshold and
+                channel_data[i] > channel_data[i - 1] and
+                channel_data[i] > channel_data[i + 1]):
+                if len(peaks) == 0 or i - peaks[-1] > min_peak_distance:
+                    peaks.append(i)
+    
+    if len(peaks) < 2:
+        return 60
     
     # Calculate RR intervals
     intervals = []
     for i in range(1, len(peaks)):
         intervals.append(peaks[i] - peaks[i - 1])
     
-    avg_interval = sum(intervals) / len(intervals)
-    sample_rate = 250  # ADS1298 sample rate
+    # Filter out unrealistic intervals (corresponding to <40 or >180 BPM)
+    filtered_intervals = []
+    for interval in intervals:
+        if sample_rate * 0.33 <= interval <= sample_rate * 1.5:  # 40-180 BPM range
+            filtered_intervals.append(interval)
+    
+    if len(filtered_intervals) == 0:
+        return 60
+    
+    # Calculate average interval and convert to BPM
+    avg_interval = sum(filtered_intervals) / len(filtered_intervals)
     heart_rate = round((60 * sample_rate) / avg_interval)
     
-    # Clamp to reasonable range
-    return max(40, min(200, heart_rate))
+    # Final clamp to physiological range
+    return max(40, min(180, heart_rate))
 
 def assess_channel_quality(channel_data: List[float]) -> str:
     """
