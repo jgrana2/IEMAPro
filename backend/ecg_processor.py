@@ -13,18 +13,18 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ADS1298Sample:
-    leadI: float
-    leadII: float
-    leadIII: float
-    aVR: float
-    aVL: float
-    aVF: float
-    V1: float
-    V2: float
-    V3: float
-    V4: float
-    V5: float
-    V6: float
+    leadI: float      # Channel 1 (raw)
+    leadII: float     # Channel 2 (raw)
+    leadIII: float    # Derived: Lead I - Lead II
+    aVR: float        # Derived: -(Lead I + Lead II) / 2
+    aVL: float        # Derived: Lead I - Lead II / 2
+    aVF: float        # Derived: Lead II - Lead I / 2
+    V1: float         # Channel 3
+    V2: float         # Channel 4
+    V3: float         # Channel 5
+    V4: float         # Channel 6
+    V5: float         # Channel 7
+    V6: float         # Channel 8
 
 @dataclass
 class ParsedECGData:
@@ -255,6 +255,48 @@ def assess_signal_quality(samples: List[ADS1298Sample]) -> str:
         return "poor"  # Signal too weak or flat
     
     return "good"
+
+def create_ads1298_sample(channel_data: Dict[int, List[float]], sample_index: int) -> ADS1298Sample:
+    """
+    Create ADS1298Sample with proper lead derivation
+    
+    Args:
+        channel_data: Dictionary containing raw channel data (1-8)
+        sample_index: Index of the current sample within each channel
+    
+    Returns:
+        ADS1298Sample with properly calculated derived leads
+    """
+    # Get raw values for this sample
+    lead_i = channel_data.get(1, [])[sample_index] if channel_data.get(1) and len(channel_data[1]) > sample_index else 0.0
+    lead_ii = channel_data.get(2, [])[sample_index] if channel_data.get(2) and len(channel_data[2]) > sample_index else 0.0
+    v1 = channel_data.get(3, [])[sample_index] if channel_data.get(3) and len(channel_data[3]) > sample_index else 0.0
+    v2 = channel_data.get(4, [])[sample_index] if channel_data.get(4) and len(channel_data[4]) > sample_index else 0.0
+    v3 = channel_data.get(5, [])[sample_index] if channel_data.get(5) and len(channel_data[5]) > sample_index else 0.0
+    v4 = channel_data.get(6, [])[sample_index] if channel_data.get(6) and len(channel_data[6]) > sample_index else 0.0
+    v5 = channel_data.get(7, [])[sample_index] if channel_data.get(7) and len(channel_data[7]) > sample_index else 0.0
+    v6 = channel_data.get(8, [])[sample_index] if channel_data.get(8) and len(channel_data[8]) > sample_index else 0.0
+
+    # Calculate derived leads using standard ECG formulas
+    lead_iii = lead_i - lead_ii
+    avr = -(lead_i + lead_ii) / 2
+    avl = lead_i - lead_ii / 2
+    avf = lead_ii - lead_i / 2
+
+    return ADS1298Sample(
+        leadI=lead_i,
+        leadII=lead_ii,
+        leadIII=lead_iii,
+        aVR=avr,
+        aVL=avl,
+        aVF=avf,
+        V1=v1,
+        V2=v2,
+        V3=v3,
+        V4=v4,
+        V5=v5,
+        V6=v6
+    )
 
 def convert_to_ecg_format(parsed_data: ParsedECGData) -> Dict[str, List[float]]:
     """

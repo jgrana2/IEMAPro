@@ -456,14 +456,14 @@ async def setup_ble_callbacks():
                 
                 # Map ADS1298 channels to standard ECG leads
                 channel_lead_map = {
-                    1: "Lead I",
-                    2: "Lead II", 
-                    3: "Lead III",
-                    4: "aVR",
-                    5: "aVL",
-                    6: "aVF",
-                    7: "V1",
-                    8: "V2"
+                    1: "Lead I",     # Raw limb lead
+                    2: "Lead II",    # Raw limb lead  
+                    3: "V1",         # Precordial lead
+                    4: "V2",         # Precordial lead
+                    5: "V3",         # Precordial lead
+                    6: "V4",         # Precordial lead
+                    7: "V5",         # Precordial lead
+                    8: "V6"          # Precordial lead
                 }
                 
                 lead_name = channel_lead_map.get(channel_number, f"Channel {channel_number}")

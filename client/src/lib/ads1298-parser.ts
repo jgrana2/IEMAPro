@@ -4,18 +4,18 @@
  */
 
 export interface ADS1298Sample {
-  leadI: number;
-  leadII: number;
-  leadIII: number;
-  aVR: number;
-  aVL: number;
-  aVF: number;
-  V1: number;
-  V2: number;
-  V3: number;
-  V4: number;
-  V5: number;
-  V6: number;
+  leadI: number;      // Channel 1 (raw)
+  leadII: number;     // Channel 2 (raw)
+  leadIII: number;    // Derived: Lead I - Lead II
+  aVR: number;        // Derived: -(Lead I + Lead II) / 2
+  aVL: number;        // Derived: Lead I - Lead II / 2
+  aVF: number;        // Derived: Lead II - Lead I / 2
+  V1: number;         // Channel 3
+  V2: number;         // Channel 4
+  V3: number;         // Channel 5
+  V4: number;         // Channel 6
+  V5: number;         // Channel 7
+  V6: number;         // Channel 8
 }
 
 export interface ParsedECGData {
@@ -196,6 +196,47 @@ export function parseADS1298Data(rawData: number[]): ParsedECGData {
     timestamp: Date.now(),
     sampleRate: 250,
     quality: "good",
+  };
+}
+
+/**
+ * Create ADS1298Sample with proper lead derivation
+ * @param channelData - Object containing raw channel data (1-8)
+ * @param sampleIndex - Index of the current sample within each channel
+ */
+export function createADS1298Sample(
+  channelData: { [channel: number]: number[] },
+  sampleIndex: number
+): ADS1298Sample {
+  // Get raw values for this sample
+  const leadI = channelData[1]?.[sampleIndex] || 0;
+  const leadII = channelData[2]?.[sampleIndex] || 0;
+  const V1 = channelData[3]?.[sampleIndex] || 0;
+  const V2 = channelData[4]?.[sampleIndex] || 0;
+  const V3 = channelData[5]?.[sampleIndex] || 0;
+  const V4 = channelData[6]?.[sampleIndex] || 0;
+  const V5 = channelData[7]?.[sampleIndex] || 0;
+  const V6 = channelData[8]?.[sampleIndex] || 0;
+
+  // Calculate derived leads using standard ECG formulas
+  const leadIII = leadI - leadII;
+  const aVR = -(leadI + leadII) / 2;
+  const aVL = leadI - leadII / 2;
+  const aVF = leadII - leadI / 2;
+
+  return {
+    leadI,
+    leadII,
+    leadIII,
+    aVR,
+    aVL,
+    aVF,
+    V1,
+    V2,
+    V3,
+    V4,
+    V5,
+    V6
   };
 }
 

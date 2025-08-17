@@ -52,6 +52,48 @@ const ECG_LEADS = [
   { name: "V6", voltage: "0.8mV" },
 ];
 
+// Calculate derived ECG leads from Lead I and Lead II
+function calculateDerivedLeads(ecgData: { [leadName: string]: number[] }): { [leadName: string]: number[] } {
+  const leadI = ecgData["Lead I"] || [];
+  const leadII = ecgData["Lead II"] || [];
+  
+  // If we don't have both Lead I and Lead II data, return original data
+  if (leadI.length === 0 || leadII.length === 0) {
+    return ecgData;
+  }
+  
+  const derivedData = { ...ecgData };
+  
+  // Calculate derived leads using standard ECG formulas
+  const maxLength = Math.min(leadI.length, leadII.length);
+  
+  // Lead III = Lead I - Lead II  
+  derivedData["Lead III"] = [];
+  for (let i = 0; i < maxLength; i++) {
+    derivedData["Lead III"].push(leadI[i] - leadII[i]);
+  }
+  
+  // aVR = -(Lead I + Lead II) / 2
+  derivedData["aVR"] = [];
+  for (let i = 0; i < maxLength; i++) {
+    derivedData["aVR"].push(-(leadI[i] + leadII[i]) / 2);
+  }
+  
+  // aVL = Lead I - Lead II / 2
+  derivedData["aVL"] = [];
+  for (let i = 0; i < maxLength; i++) {
+    derivedData["aVL"].push(leadI[i] - leadII[i] / 2);
+  }
+  
+  // aVF = Lead II - Lead I / 2  
+  derivedData["aVF"] = [];
+  for (let i = 0; i < maxLength; i++) {
+    derivedData["aVF"].push(leadII[i] - leadI[i] / 2);
+  }
+  
+  return derivedData;
+}
+
 export function MainContent({
   currentPatient,
   currentSession,
@@ -86,8 +128,11 @@ export function MainContent({
       const timestamp = Date.now();
       const leadsData: { [leadName: string]: number } = {};
 
+      // Calculate derived leads for history recording
+      const processedEcgData = calculateDerivedLeads(ecgData);
+
       // Convert current ECG data to single values for history
-      Object.entries(ecgData).forEach(([leadName, dataArray]) => {
+      Object.entries(processedEcgData).forEach(([leadName, dataArray]) => {
         leadsData[leadName] = dataArray[dataArray.length - 1] || 0;
       });
 
@@ -263,21 +308,11 @@ export function MainContent({
           <CardContent className="p-6">
             <ECGCarousel
               leads={ECG_LEADS.map((lead) => {
-                // Log the raw lead object
-                // console.log("Lead:", lead);
-
-                // Get the data for this lead, or fallback to []
-                const leadData = ecgData[lead.name] || [];
-
-                // Log the data array
-                // console.log("Lead Data:", leadData);
-
-                // // Optionally log based on availability
-                // if (leadData.length > 0) {
-                //   console.log(`Mapped data for ${lead.name}, length: ${leadData.length}`);
-                // } else {
-                //   console.log(`No data available for ${lead.name}`);
-                // }
+                // Calculate derived leads from Lead I and Lead II
+                const processedEcgData = calculateDerivedLeads(ecgData);
+                
+                // Get the data for this lead (now including derived leads)
+                const leadData = processedEcgData[lead.name] || [];
 
                 // Return the new object with data attached
                 return {

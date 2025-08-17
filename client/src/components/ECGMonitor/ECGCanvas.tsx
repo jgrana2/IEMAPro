@@ -19,7 +19,7 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
   useEffect(() => {
     if (data && data.length > 0) {
       // ECG data received and processed silently
-      console.log(leadName, data);
+      // console.log(leadName, data);
       
     } else {
       // No data or empty array - handled silently
