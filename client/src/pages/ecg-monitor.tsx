@@ -11,18 +11,18 @@ import { usePythonBLE } from "@/hooks/usePythonBLE";
 import { Bot } from "lucide-react";
 
 export default function ECGMonitor() {
-  const { leftExpanded, rightExpanded, toggleLeft, toggleRight } =
-    useSidebarState();
+  const { leftExpanded, rightExpanded, toggleLeft, toggleRight } = useSidebarState();
   const { wsStatus, sendMessage, ecgData: wsEcgData, heartRate: wsHeartRate, signalQuality: wsSignalQuality } = useWebSocketContext();
 
   const [currentPatient, setCurrentPatient] = useState<any>(null);
   const [currentSession, setCurrentSession] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [sessionSaved, setSessionSaved] = useState(false);
+  const [refreshSessionsTrigger, setRefreshSessionsTrigger] = useState(0);
   const [ecgData, setEcgData] = useState<{ [leadName: string]: number[] }>({});
   const [heartRate, setHeartRate] = useState(0);
-  const [signalQuality, setSignalQuality] = useState<"good" | "poor" | "noise">(
-    "poor",
-  );
+  const [signalQuality, setSignalQuality] = useState<"good" | "poor" | "noise">("poor");
 
   // Handle ECG data from BLE directly
   const handleECGData = (
@@ -133,6 +133,28 @@ export default function ECGMonitor() {
     }
   }, [mergedEcgData, mergedHeartRate, mergedSignalQuality, wsEcgData, ecgData, wsStatus, bleStatus]);
 
+  // Handlers for recording controls
+  const handleStartRecording = () => {
+    setIsRecording(true);
+    setIsPaused(false);
+    setSessionSaved(false);
+  };
+
+  const handlePauseRecording = () => {
+    setIsPaused((prev) => !prev);
+  };
+
+  const handleStopRecording = () => {
+    setIsRecording(false);
+    setIsPaused(false);
+  };
+
+  const handleSaveSession = () => {
+    setSessionSaved(true); // MainContent will react to this and save
+    setIsRecording(false);
+    setIsPaused(false);
+  };
+
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Left Sidebar */}
@@ -167,8 +189,16 @@ export default function ECGMonitor() {
               currentPatient={currentPatient}
               currentSession={currentSession}
               isRecording={isRecording}
-              onStartRecording={() => setIsRecording(true)}
-              onStopRecording={() => setIsRecording(false)}
+              isPaused={isPaused}
+              sessionSaved={sessionSaved}
+              onStartRecording={handleStartRecording}
+              onPauseRecording={handlePauseRecording}
+              onStopRecording={handleStopRecording}
+              onSaveSession={handleSaveSession}
+              onSessionSaved={() => {
+                setRefreshSessionsTrigger((v) => v + 1);
+                setSessionSaved(false); // reset after save
+              }}
               bleStatus={bleStatus}
               wsStatus={wsStatus}
               ecgData={mergedEcgData}
@@ -232,7 +262,11 @@ export default function ECGMonitor() {
         onSessionSelect={setCurrentSession}
         currentPatient={currentPatient}
         isRecording={isRecording}
-        onStopRecording={() => setIsRecording(false)}
+        isPaused={isPaused}
+        onPauseRecording={handlePauseRecording}
+        onStopRecording={handleStopRecording}
+        onSaveSession={handleSaveSession}
+        refreshSessionsTrigger={refreshSessionsTrigger}
       />
 
       {/* Mobile Overlay */}

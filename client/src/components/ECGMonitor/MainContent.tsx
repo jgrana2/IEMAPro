@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { saveRecordingSession } from "@/lib/api";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,8 +24,13 @@ interface MainContentProps {
   currentPatient: any;
   currentSession: any;
   isRecording: boolean;
+  isPaused: boolean;
+  sessionSaved: boolean;
   onStartRecording: () => void;
+  onPauseRecording: () => void;
   onStopRecording: () => void;
+  onSaveSession: () => void;
+  onSessionSaved: () => void;
   bleStatus: string;
   wsStatus: string;
   ecgData?: { [leadName: string]: number[] };
@@ -98,8 +104,13 @@ export function MainContent({
   currentPatient,
   currentSession,
   isRecording,
+  isPaused,
+  sessionSaved,
   onStartRecording,
+  onPauseRecording,
   onStopRecording,
+  onSaveSession,
+  onSessionSaved,
   bleStatus,
   wsStatus,
   ecgData = {},
@@ -108,6 +119,7 @@ export function MainContent({
   onTestData,
 }: MainContentProps) {
   const [ecgHistory, setEcgHistory] = useState<ECGData[]>([]);
+  // sessionSaved is now a prop, not local state
   const { toast } = useToast();
 
   // Get WebSocket functions for sending data (if needed)
@@ -123,29 +135,56 @@ export function MainContent({
   // Heart rate now comes from real ADS1298 data via WebSocket
 
   // Store ECG data for history when recording with real ADS1298 data
+  // Prevent multiple saves per click
+  const hasSavedRef = useRef(false);
   useEffect(() => {
-    if (isRecording && Object.keys(ecgData).length > 0) {
+    if (isRecording && !isPaused && Object.keys(ecgData).length > 0) {
       const timestamp = Date.now();
       const leadsData: { [leadName: string]: number } = {};
-
-      // Calculate derived leads for history recording
       const processedEcgData = calculateDerivedLeads(ecgData);
-
-      // Convert current ECG data to single values for history
       Object.entries(processedEcgData).forEach(([leadName, dataArray]) => {
         leadsData[leadName] = dataArray[dataArray.length - 1] || 0;
       });
-
       const ecgDataPoint: ECGData = {
         timestamp,
         leads: leadsData,
         heartRate,
         quality: signalQuality,
       };
-
       setEcgHistory((prev) => [...prev.slice(-999), ecgDataPoint]);
     }
-  }, [isRecording, ecgData, heartRate, signalQuality]);
+    // Save session only when sessionSaved is set true and not already empty
+    if (sessionSaved && ecgHistory.length > 0 && currentPatient && !hasSavedRef.current) {
+      hasSavedRef.current = true;
+      const sessionPayload = {
+        sessionId: currentSession?.sessionId || `SESSION-${Date.now()}`,
+        patientId: currentPatient.id,
+        deviceId: 1, // TODO: Replace with actual device ID if available
+        duration: Math.floor(ecgHistory.length * 0.1),
+        heartRate: heartRate,
+        status: "completed",
+        ecgData: ecgHistory,
+        bufferSize: 250,
+      };
+      saveRecordingSession(sessionPayload)
+        .then(() => {
+          onSessionSaved();
+          setEcgHistory([]);
+          toast({ title: "Session Saved", description: "Recording session saved to backend." });
+        })
+        .catch(() => {
+          toast({ title: "Save Failed", description: "Could not save session to backend.", variant: "destructive" });
+        });
+    }
+    // Reset hasSavedRef when not saving
+    if (!sessionSaved) {
+      hasSavedRef.current = false;
+    }
+    // Reset history if recording stopped and not saving
+    if (!isRecording && !sessionSaved && ecgHistory.length > 0) {
+      setEcgHistory([]);
+    }
+  }, [isRecording, isPaused, ecgData, heartRate, signalQuality, ecgHistory, sessionSaved, currentPatient, currentSession, toast, onSessionSaved]);
 
   const handleGeneratePDF = async () => {
     if (!currentPatient) {
@@ -163,6 +202,7 @@ export function MainContent({
         startTime: new Date(),
         endTime: new Date(),
         duration: Math.floor(ecgHistory.length * 0.1), // Approximate duration in seconds
+  // onSessionSaved prop type is already declared above
         heartRate: heartRate,
       };
 
@@ -171,6 +211,7 @@ export function MainContent({
         sessionInfo,
         ecgHistory,
       );
+  // onSessionSaved is destructured above
       const filename = `ECG_Report_${currentPatient.name.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
 
       await downloadPDF(pdfBlob, filename);

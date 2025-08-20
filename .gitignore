@@ -9,3 +9,4 @@ backend/env/
 backend/ecg_monitor.db
 backend/.venv/
 logs/
+attached_assets/

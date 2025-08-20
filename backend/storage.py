@@ -20,7 +20,10 @@ logger = logging.getLogger(__name__)
 
 class Storage:
     def __init__(self, db_path: str = "ecg_monitor.db"):
+        import os
         self.db_path = db_path
+        abs_path = os.path.abspath(self.db_path)
+        logger.info(f"Using SQLite database at: {abs_path}")
         self._init_database()
     
     def _init_database(self):
@@ -118,11 +121,11 @@ class Storage:
                 patient = Patient(
                     id=patient_dict["id"],
                     name=patient_dict["name"],
-                    patientId=patient_dict["patient_id"],
-                    dateOfBirth=patient_dict["date_of_birth"],
+                    patient_id=patient_dict["patient_id"],
+                    date_of_birth=patient_dict["date_of_birth"],
                     gender=patient_dict["gender"],
-                    medicalNotes=patient_dict["medical_notes"],
-                    createdAt=datetime.fromisoformat(patient_dict["created_at"]) if patient_dict["created_at"] else datetime.now()
+                    medical_notes=patient_dict["medical_notes"],
+                    created_at=datetime.fromisoformat(patient_dict["created_at"]) if patient_dict["created_at"] else datetime.now()
                 )
                 patients.append(patient)
             
@@ -144,11 +147,11 @@ class Storage:
             return Patient(
                 id=patient_dict["id"],
                 name=patient_dict["name"],
-                patientId=patient_dict["patient_id"],
-                dateOfBirth=patient_dict["date_of_birth"],
+                patient_id=patient_dict["patient_id"],
+                date_of_birth=patient_dict["date_of_birth"],
                 gender=patient_dict["gender"],
-                medicalNotes=patient_dict["medical_notes"],
-                createdAt=datetime.fromisoformat(patient_dict["created_at"]) if patient_dict["created_at"] else datetime.now()
+                medical_notes=patient_dict["medical_notes"],
+                created_at=datetime.fromisoformat(patient_dict["created_at"]) if patient_dict["created_at"] else datetime.now()
             )
         finally:
             conn.close()

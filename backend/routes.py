@@ -146,11 +146,28 @@ async def get_recording_sessions_by_patient(patient_id: int):
         logger.error(f"Failed to fetch patient recording sessions: {error}")
         raise HTTPException(status_code=500, detail="Failed to fetch patient recording sessions")
 
-@router.get("/api/recording-sessions/{session_id}")
-async def get_recording_session(session_id: int):
-    """Get recording session by ID"""
+
+# Fetch by integer id (legacy)
+@router.get("/api/recording-sessions/by-id/{id}")
+async def get_recording_session_by_id(id: int):
+    """Get recording session by integer ID (legacy)"""
     try:
-        session = await storage.get_recording_session(session_id)
+        session = await storage.get_recording_session(id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Recording session not found")
+        return session.model_dump(by_alias=True)
+    except HTTPException:
+        raise
+    except Exception as error:
+        logger.error(f"Failed to fetch recording session: {error}")
+        raise HTTPException(status_code=500, detail="Failed to fetch recording session")
+
+# Fetch by string session_id (recommended)
+@router.get("/api/recording-sessions/{session_id}")
+async def get_recording_session_by_session_id(session_id: str):
+    """Get recording session by string session_id (recommended)"""
+    try:
+        session = await storage.get_recording_session_by_session_id(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Recording session not found")
         return session.model_dump(by_alias=True)

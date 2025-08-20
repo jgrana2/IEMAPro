@@ -1,4 +1,4 @@
-import { useState } from "react";
+// ...existing code...
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,9 @@ import {
   FileText,
   History,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { fetchAllSessions, fetchPatientSessions, fetchSessionById } from "@/lib/api";
+import { generateECGReport, downloadPDF } from "@/lib/pdf-generator";
 import { formatDistance } from "date-fns";
 
 interface RightSidebarProps {
@@ -22,7 +24,11 @@ interface RightSidebarProps {
   onSessionSelect: (session: any) => void;
   currentPatient: any;
   isRecording: boolean;
+  isPaused: boolean;
+  onPauseRecording: () => void;
   onStopRecording: () => void;
+  onSaveSession: () => void;
+  refreshSessionsTrigger: number;
 }
 
 export function RightSidebar({
@@ -32,18 +38,50 @@ export function RightSidebar({
   onSessionSelect,
   currentPatient,
   isRecording,
+  isPaused,
+  onPauseRecording,
   onStopRecording,
+  onSaveSession,
+  refreshSessionsTrigger,
 }: RightSidebarProps) {
   const [recordingDuration, setRecordingDuration] = useState("00:00:00");
+  const [durationSeconds, setDurationSeconds] = useState(0);
 
-  const { data: allSessions = [] } = useQuery({
-    queryKey: ["/api/recording-sessions"],
-  });
+  // Timer effect: increments duration while recording
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isRecording) {
+      interval = setInterval(() => {
+        setDurationSeconds((prev) => prev + 1);
+      }, 1000);
+    } else {
+      setDurationSeconds(0);
+      setRecordingDuration("00:00:00");
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRecording]);
 
-  const { data: patientSessions = [] } = useQuery({
-    queryKey: ["/api/recording-sessions/patient", currentPatient?.id],
-    enabled: !!currentPatient?.id,
-  });
+  // Update formatted duration string
+  useEffect(() => {
+    setRecordingDuration(formatDuration(durationSeconds));
+  }, [durationSeconds]);
+
+  const [allSessions, setAllSessions] = useState<any[]>([]);
+  const [patientSessions, setPatientSessions] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchAllSessions().then(setAllSessions);
+  }, [refreshSessionsTrigger]);
+
+  useEffect(() => {
+    if (currentPatient?.id) {
+      fetchPatientSessions(currentPatient.id).then(setPatientSessions);
+    } else {
+      setPatientSessions([]);
+    }
+  }, [currentPatient, refreshSessionsTrigger]);
 
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -52,9 +90,32 @@ export function RightSidebar({
     return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const handleGeneratePDF = (session: any) => {
-    // TODO: Implement PDF generation
-    // PDF generation handled silently
+  const handleGeneratePDF = async (session: any) => {
+    if (!currentPatient) return;
+    try {
+      // Always fetch the full session by sessionId (string, not id)
+      const sessionId = session.sessionId || session.id || session.id?.toString();
+      if (!sessionId) {
+        alert("Session ID not found.");
+        return;
+      }
+      const fullSession = await fetchSessionById(sessionId);
+      // Validate ecgData
+      const ecgData = Array.isArray(fullSession.ecgData) ? fullSession.ecgData : [];
+      if (!ecgData.length) {
+        alert("No ECG data found for this session. Cannot generate report.");
+        return;
+      }
+      const pdfBlob = await generateECGReport(
+        currentPatient,
+        fullSession,
+        ecgData
+      );
+      const filename = `ECG_Report_${currentPatient.name.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
+      await downloadPDF(pdfBlob, filename);
+    } catch (error) {
+      alert("Failed to generate PDF report. Please try again.");
+    }
   };
 
   return (
@@ -120,20 +181,29 @@ export function RightSidebar({
                           <div className="flex space-x-2">
                             <Button
                               size="sm"
-                              variant="destructive"
+                              variant={isPaused ? "secondary" : "destructive"}
                               className="flex-1"
-                              onClick={onStopRecording}
+                              onClick={onPauseRecording}
                             >
                               <Pause className="h-3 w-3 mr-1" />
-                              Pause
+                              {isPaused ? "Resume" : "Pause"}
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
                               className="flex-1"
+                              onClick={onSaveSession}
                             >
                               <Save className="h-3 w-3 mr-1" />
                               Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={onStopRecording}
+                            >
+                              Stop
                             </Button>
                           </div>
                         </>
