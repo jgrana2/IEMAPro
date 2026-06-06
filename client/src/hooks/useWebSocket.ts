@@ -17,6 +17,18 @@ export function useWebSocket() {
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
   const ecgBufferRef = useRef<{ [leadName: string]: number[] }>({});
+  const ecgStateFrameRef = useRef<number | null>(null);
+
+  const scheduleEcgStateFlush = useCallback(() => {
+    if (ecgStateFrameRef.current !== null) {
+      return;
+    }
+
+    ecgStateFrameRef.current = requestAnimationFrame(() => {
+      ecgStateFrameRef.current = null;
+      setEcgData({ ...ecgBufferRef.current });
+    });
+  }, []);
 
   const connect = useCallback((url?: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -66,7 +78,7 @@ export function useWebSocket() {
             });
 
             ecgBufferRef.current = newBuffer;
-            setEcgData({ ...newBuffer });
+            scheduleEcgStateFlush();
             setHeartRate(message.heartRate || 60);
             setSignalQuality(message.quality || 'good');
           }
@@ -109,6 +121,11 @@ export function useWebSocket() {
     
     setWsStatus('disconnected');
     reconnectAttempts.current = 0;
+
+    if (ecgStateFrameRef.current !== null) {
+      cancelAnimationFrame(ecgStateFrameRef.current);
+      ecgStateFrameRef.current = null;
+    }
   }, []);
 
   const sendMessage = useCallback((message: WebSocketMessage) => {
@@ -140,6 +157,10 @@ export function useWebSocket() {
     connect();
     
     return () => {
+      if (ecgStateFrameRef.current !== null) {
+        cancelAnimationFrame(ecgStateFrameRef.current);
+        ecgStateFrameRef.current = null;
+      }
       disconnect();
     };
   }, [connect, disconnect]);

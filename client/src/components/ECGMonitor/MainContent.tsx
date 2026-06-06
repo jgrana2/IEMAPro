@@ -1,5 +1,5 @@
 import { saveRecordingSession } from "@/lib/api";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -131,6 +131,7 @@ export function MainContent({
   });
 
   const typedSystemLogs = systemLogs as any[];
+  const processedEcgData = useMemo(() => calculateDerivedLeads(ecgData), [ecgData]);
 
   // Heart rate now comes from real ADS1298 data via WebSocket
 
@@ -141,7 +142,6 @@ export function MainContent({
     if (isRecording && !isPaused && Object.keys(ecgData).length > 0) {
       const timestamp = Date.now();
       const leadsData: { [leadName: string]: number } = {};
-      const processedEcgData = calculateDerivedLeads(ecgData);
       Object.entries(processedEcgData).forEach(([leadName, dataArray]) => {
         leadsData[leadName] = dataArray[dataArray.length - 1] || 0;
       });
@@ -349,9 +349,6 @@ export function MainContent({
           <CardContent className="p-6">
             <ECGCarousel
               leads={ECG_LEADS.map((lead) => {
-                // Calculate derived leads from Lead I and Lead II
-                const processedEcgData = calculateDerivedLeads(ecgData);
-                
                 // Get the data for this lead (now including derived leads)
                 const leadData = processedEcgData[lead.name] || [];
 
