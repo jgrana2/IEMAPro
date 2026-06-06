@@ -204,7 +204,6 @@ export default function ECGMonitor() {
               ecgData={mergedEcgData}
               heartRate={mergedHeartRate}
               signalQuality={mergedSignalQuality}
-              onTestData={handleECGData}
             />
           </div>
 

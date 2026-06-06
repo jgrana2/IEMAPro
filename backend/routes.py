@@ -487,16 +487,16 @@ async def setup_ble_callbacks():
                 lead_data[lead_name] = channel_samples
                 
                 # Calculate heart rate and assess quality
-                # heart_rate = calculate_heart_rate_from_channel(channel_samples)
-                # quality = assess_channel_quality(channel_samples)
+                heart_rate = calculate_heart_rate_from_channel(channel_samples)
+                quality = assess_channel_quality(channel_samples)
                 
                 # Broadcast to WebSocket clients
                 message = {
                     "type": "ecg_data",
                     "timestamp": int(datetime.now().timestamp() * 1000),
                     "leadData": lead_data,
-                    "heartRate": 0,
-                    "quality": "good",
+                    "heartRate": heart_rate,
+                    "quality": quality,
                     "channelNumber": channel_number,
                     "characteristicUuid": characteristic_uuid
                 }

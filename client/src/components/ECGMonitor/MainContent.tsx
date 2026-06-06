@@ -36,11 +36,6 @@ interface MainContentProps {
   ecgData?: { [leadName: string]: number[] };
   heartRate?: number;
   signalQuality?: "good" | "poor" | "noise";
-  onTestData?: (
-    leadData: { [leadName: string]: number[] },
-    hr: number,
-    quality: string,
-  ) => void;
 }
 
 const ECG_LEADS = [
@@ -116,7 +111,6 @@ export function MainContent({
   ecgData = {},
   heartRate = 0,
   signalQuality = "poor",
-  onTestData,
 }: MainContentProps) {
   const [ecgHistory, setEcgHistory] = useState<ECGData[]>([]);
   // sessionSaved is now a prop, not local state
@@ -368,7 +362,12 @@ export function MainContent({
 
         {/* ADS1298 Test Panel */}
         <div className="mt-4">
-          <ADS1298TestPanel onTestData={onTestData} />
+          <ADS1298TestPanel
+            ecgData={ecgData}
+            heartRate={heartRate}
+            signalQuality={signalQuality}
+            deviceConnectionStatus={bleStatus as "connected" | "disconnected" | "connecting" | "scanning"}
+          />
         </div>
       </div>
 
