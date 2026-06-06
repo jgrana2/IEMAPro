@@ -15,10 +15,14 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
   const activeRef = useRef(isActive);
   const metricsRef = useRef({ width, height, dpr: 1 });
   const gridCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const scaleStateRef = useRef<{ baseline: number; range: number } | null>(null);
   const startLoopRef = useRef<() => void>(() => {});
   const stopLoopRef = useRef<() => void>(() => {});
   const drawInactiveRef = useRef<() => void>(() => {});
+
+  // Clinical ECG convention: 10 mm/mV gain.
+  const MINOR_GRID_PX = 5;
+  const ECG_GAIN_MM_PER_MV = 10;
+  const PIXELS_PER_MV = MINOR_GRID_PX * ECG_GAIN_MM_PER_MV;
 
   useEffect(() => {
     dataRef.current = data;
@@ -125,32 +129,27 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
       const step = Math.max(1, Math.ceil(source.length / maxPoints));
       const points: number[] = [];
       for (let i = 0; i < source.length; i += step) {
-        points.push(source[i]);
+        const value = source[i];
+        if (Number.isFinite(value)) {
+          points.push(value);
+        }
       }
 
-      let minValue = Number.POSITIVE_INFINITY;
-      let maxValue = Number.NEGATIVE_INFINITY;
-      for (let i = 0; i < points.length; i++) {
-        const value = points[i];
-        if (value < minValue) minValue = value;
-        if (value > maxValue) maxValue = value;
+      if (points.length === 0) {
+        ctx.strokeStyle = traceColor;
+        ctx.lineWidth = 1.25;
+        ctx.beginPath();
+        ctx.moveTo(0, canvasHeight / 2);
+        ctx.lineTo(canvasWidth, canvasHeight / 2);
+        ctx.stroke();
+        return;
       }
 
-      const targetBaseline = (minValue + maxValue) / 2;
-      const targetRange = Math.max(maxValue - minValue, 1e-6);
+      // Keep clinical fixed gain while removing DC drift so disconnected leads remain visible.
+      const baselineMv = points.reduce((sum, value) => sum + value, 0) / points.length;
 
-      if (!scaleStateRef.current) {
-        scaleStateRef.current = { baseline: targetBaseline, range: targetRange };
-      } else {
-        const alpha = 0.1;
-        scaleStateRef.current.baseline += (targetBaseline - scaleStateRef.current.baseline) * alpha;
-        scaleStateRef.current.range += (targetRange - scaleStateRef.current.range) * alpha;
-      }
-
-      const baseline = scaleStateRef.current.baseline;
-      const range = Math.max(scaleStateRef.current.range, 1e-6);
       const centerY = canvasHeight / 2;
-      const amplitude = canvasHeight * 0.4;
+      const visibleClipMv = Math.max(0.1, (canvasHeight / 2 - 2) / PIXELS_PER_MV);
 
       ctx.strokeStyle = traceColor;
       ctx.lineWidth = 1.5;
@@ -161,8 +160,9 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
       const lastIndex = points.length - 1;
       for (let i = 0; i <= lastIndex; i++) {
         const x = lastIndex > 0 ? (i / lastIndex) * canvasWidth : 0;
-        const normalized = (points[i] - baseline) / (range / 2);
-        const y = centerY - Math.max(-1.2, Math.min(1.2, normalized)) * amplitude;
+        const detrendedMv = points[i] - baselineMv;
+        const valueMv = Math.max(-visibleClipMv, Math.min(visibleClipMv, detrendedMv));
+        const y = centerY - valueMv * PIXELS_PER_MV;
 
         if (i === 0) {
           ctx.moveTo(x, y);
@@ -205,7 +205,6 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
 
     const handleResize = () => {
       configureCanvas();
-      scaleStateRef.current = null;
       if (!activeRef.current) {
         drawFrame("#9CA3AF");
       }
