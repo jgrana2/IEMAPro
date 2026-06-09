@@ -10,3 +10,5 @@ backend/ecg_monitor.db
 backend/.venv/
 logs/
 attached_assets/
+build/
+ecg_monitor.db

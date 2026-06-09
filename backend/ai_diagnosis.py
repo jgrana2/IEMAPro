@@ -10,6 +10,11 @@ from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 from anthropic import Anthropic
 
+try:
+    from backend.models import AIDiagnosisRequest  # type: ignore
+except ImportError:  # pragma: no cover
+    from backend.models import AIDiagnosisRequest  # type: ignore
+
 logger = logging.getLogger(__name__)
 
 @dataclass

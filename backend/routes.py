@@ -12,19 +12,54 @@ from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from models import (
-    InsertPatient, InsertBleDevice, UpdateBleDevice, InsertRecordingSession,
-    UpdateRecordingSession, InsertSystemLog, AIDiagnosisRequest,
-    ADS1298DataMessage, ECGDataMessage, BLEStatusMessage, ConnectionStatusMessage
-)
-from storage import storage
-from ai_diagnosis import analyze_ecg_with_ai
-from ble_manager import ble_manager
-from ecg_processor import (
-    parse_ads1298_single_channel, calculate_heart_rate_from_channel,
-    assess_channel_quality, convert_to_ecg_format, parse_ads1298_data_raw
-)
-
+try:
+    from backend.models import (
+        InsertPatient,
+        InsertBleDevice,
+        UpdateBleDevice,
+        InsertRecordingSession,
+        UpdateRecordingSession,
+        InsertSystemLog,
+        AIDiagnosisRequest,
+        ADS1298DataMessage,
+        ECGDataMessage,
+        BLEStatusMessage,
+        ConnectionStatusMessage,
+    )
+    from backend.storage import storage
+    from backend.ai_diagnosis import analyze_ecg_with_ai
+    from backend.ble_manager import ble_manager
+    from backend.ecg_processor import (
+        parse_ads1298_single_channel,
+        calculate_heart_rate_from_channel,
+        assess_channel_quality,
+        convert_to_ecg_format,
+        parse_ads1298_data_raw,
+    )
+except ImportError:  # pragma: no cover
+    from backend.models import (
+        InsertPatient,
+        InsertBleDevice,
+        UpdateBleDevice,
+        InsertRecordingSession,
+        UpdateRecordingSession,
+        InsertSystemLog,
+        AIDiagnosisRequest,
+        ADS1298DataMessage,
+        ECGDataMessage,
+        BLEStatusMessage,
+        ConnectionStatusMessage,
+    )
+    from backend.storage import storage
+    from backend.ai_diagnosis import analyze_ecg_with_ai
+    from backend.ble_manager import ble_manager
+    from backend.ecg_processor import (
+        parse_ads1298_single_channel,
+        calculate_heart_rate_from_channel,
+        assess_channel_quality,
+        convert_to_ecg_format,
+        parse_ads1298_data_raw,
+    )
 logger = logging.getLogger(__name__)
 
 # Create router

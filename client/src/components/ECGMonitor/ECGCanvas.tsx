@@ -19,11 +19,6 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
   const stopLoopRef = useRef<() => void>(() => {});
   const drawInactiveRef = useRef<() => void>(() => {});
 
-  // Clinical ECG convention: 10 mm/mV gain.
-  const MINOR_GRID_PX = 5;
-  const ECG_GAIN_MM_PER_MV = 10;
-  const PIXELS_PER_MV = MINOR_GRID_PX * ECG_GAIN_MM_PER_MV;
-
   useEffect(() => {
     dataRef.current = data;
   }, [data]);
@@ -145,11 +140,15 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
         return;
       }
 
-      // Keep clinical fixed gain while removing DC drift so disconnected leads remain visible.
-      const baselineMv = points.reduce((sum, value) => sum + value, 0) / points.length;
+      // Remove DC baseline drift so the waveform is centred.
+      const baseline = points.reduce((sum, v) => sum + v, 0) / points.length;
+      const detrended = points.map(v => v - baseline);
+
+      // Dynamic amplitude scaling: fit the peak-to-peak range into 80% of canvas height.
+      const maxAbs = Math.max(...detrended.map(Math.abs));
+      const scale = maxAbs > 0 ? (canvasHeight * 0.4) / maxAbs : 1;
 
       const centerY = canvasHeight / 2;
-      const visibleClipMv = Math.max(0.1, (canvasHeight / 2 - 2) / PIXELS_PER_MV);
 
       ctx.strokeStyle = traceColor;
       ctx.lineWidth = 1.5;
@@ -157,12 +156,10 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
       ctx.lineJoin = "round";
       ctx.beginPath();
 
-      const lastIndex = points.length - 1;
+      const lastIndex = detrended.length - 1;
       for (let i = 0; i <= lastIndex; i++) {
         const x = lastIndex > 0 ? (i / lastIndex) * canvasWidth : 0;
-        const detrendedMv = points[i] - baselineMv;
-        const valueMv = Math.max(-visibleClipMv, Math.min(visibleClipMv, detrendedMv));
-        const y = centerY - valueMv * PIXELS_PER_MV;
+        const y = centerY - detrended[i] * scale;
 
         if (i === 0) {
           ctx.moveTo(x, y);

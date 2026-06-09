@@ -6,6 +6,7 @@ ECG monitoring system backend with BLE support
 import logging
 import asyncio
 from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -13,8 +14,12 @@ from fastapi.responses import FileResponse
 import time
 import os
 
-from routes import router, setup_ble_callbacks
-from storage import storage
+try:
+    from backend.routes import router, setup_ble_callbacks
+    from backend.storage import storage
+except ImportError:  # pragma: no cover
+    from backend.routes import router, setup_ble_callbacks
+    from backend.storage import storage
 
 # Configure logging
 logging.basicConfig(
@@ -70,6 +75,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+APP_HOST = os.getenv("APP_HOST", "127.0.0.1")
+APP_PORT = int(os.getenv("APP_PORT", "5000"))
 
 # Add CORS middleware
 app.add_middleware(
@@ -144,9 +152,9 @@ async def health_check():
 # Mount static files from the built React app
 try:
     # Check if the dist directory exists
-    dist_path = "../dist/public"
-    if os.path.exists(dist_path):
-        app.mount("/assets", StaticFiles(directory=f"{dist_path}/assets"), name="assets")
+    dist_path = Path(__file__).resolve().parent.parent / "dist" / "public"
+    if dist_path.exists():
+        app.mount("/assets", StaticFiles(directory=str(dist_path / "assets")), name="assets")
         
         # Serve React app for all non-API routes
         @app.get("/{full_path:path}")
@@ -157,8 +165,8 @@ try:
                 return Response(status_code=404)
             
             # Serve index.html for all other routes (React Router)
-            index_path = f"{dist_path}/index.html"
-            if os.path.exists(index_path):
+            index_path = dist_path / "index.html"
+            if index_path.exists():
                 return FileResponse(index_path)
             else:
                 return Response(content="Frontend not built. Run 'npm run build' first.", status_code=503)
@@ -169,12 +177,12 @@ except Exception as e:
 
 if __name__ == "__main__":
     import uvicorn
-    
-    # Run the server on port 8000 (consistent with script default)
+
+    # Run the backend on a local desktop-friendly port by default.
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",  # Match the script's uvicorn command
-        port=8000,
-        reload=True,
+        host=APP_HOST,
+        port=APP_PORT,
+        reload=os.getenv("ENVIRONMENT", "development") != "production",
         log_level="info"
     )

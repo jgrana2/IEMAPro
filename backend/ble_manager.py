@@ -6,7 +6,10 @@ from bleak.backends.device import BLEDevice
 from bleak.backends.characteristic import BleakGATTCharacteristic
 import struct
 import time
-from models import BLEDeviceInfo, ProcessedECGData
+try:
+    from backend.models import BLEDeviceInfo, ProcessedECGData
+except ImportError:  # pragma: no cover
+    from backend.models import BLEDeviceInfo, ProcessedECGData
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

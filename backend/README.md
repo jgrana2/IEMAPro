@@ -38,7 +38,7 @@ ADS1298 Device → Python BLE (bleak) → FastAPI → WebSocket → React Fronte
    This will:
    - Install all Python dependencies
    - Run backend tests
-   - Start the FastAPI server on http://localhost:5000
+   - Start the FastAPI server on http://127.0.0.1:5000
 
 3. **Access the API:**
    - API Server: http://localhost:5000
@@ -61,8 +61,18 @@ If you prefer manual setup:
 
 3. **Start server:**
    ```bash
-   uvicorn main:app --host 0.0.0.0 --port 5000 --reload
+   uvicorn main:app --host 127.0.0.1 --port 5000 --reload
    ```
+
+### Desktop App Launcher
+
+To open the app in a native desktop window with `pywebview`:
+
+```bash
+python desktop_app.py
+```
+
+This starts the local FastAPI backend and opens the built frontend in a desktop window.
 
 ## Environment Variables
 
