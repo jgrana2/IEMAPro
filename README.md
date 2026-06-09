@@ -86,6 +86,50 @@ A comprehensive medical ECG monitoring system designed for real-time IoT Holter 
 5. **Access the application**
    Open your browser to `http://localhost:5000`
 
+### Desktop App
+
+The repository also includes a `pywebview` desktop launcher that starts the local backend and opens the UI in a native macOS window.
+
+#### Run from source
+
+1. Create and activate a Python virtual environment in `backend/.venv` or `backend/env`.
+2. Install Python dependencies:
+   ```bash
+   pip install -r backend/requirements.txt
+   ```
+3. Build the frontend bundle:
+   ```bash
+   npm install
+   npm run build
+   ```
+4. Launch the desktop app:
+   ```bash
+   ./run-desktop-mac.sh
+   ```
+
+#### Build a macOS `.app`
+
+1. Install the packaging dependency:
+   ```bash
+   pip install pyinstaller
+   ```
+2. Make sure backend dependencies are installed and the frontend can build.
+3. Run the build script:
+   ```bash
+   ./build-desktop-mac.sh
+   ```
+4. The app bundle is created at:
+   ```bash
+   release/ECG Monitor.app
+   ```
+
+#### Notes
+
+- The build script expects a Python virtual environment at `backend/.venv` or `backend/env`.
+- The bundled app serves the frontend from `dist/public`, so the React build must exist before packaging.
+- The packaged macOS app includes Bluetooth usage descriptions so macOS can prompt for permission on first scan.
+- On first launch, macOS may require you to allow the app in Security & Privacy settings.
+
 ### Production Deployment
 
 1. **Build the application**

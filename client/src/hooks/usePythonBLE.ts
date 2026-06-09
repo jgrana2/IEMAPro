@@ -93,9 +93,16 @@ export function usePythonBLE({ onECGData }: PythonBLEHookProps = {}) {
       }
     } catch (error) {
       setBleStatus("disconnected");
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const isPermissionError =
+        errorMessage.includes("403") ||
+        errorMessage.toLowerCase().includes("bluetooth permission");
+
       toast({
         title: "Scan Failed",
-        description: "Failed to scan for BLE devices. Please check that the Python backend is running and Bluetooth is enabled.",
+        description: isPermissionError
+          ? "Bluetooth permission is not granted for this app. Approve Bluetooth access in macOS System Settings, then reopen the app."
+          : "Failed to scan for BLE devices. Please check that the Python backend is running and Bluetooth is enabled.",
         variant: "destructive",
       });
     }

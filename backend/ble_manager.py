@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import Dict, List, Optional, Callable, Any
 from bleak import BleakClient, BleakScanner
+from bleak.exc import BleakError
 from bleak.backends.device import BLEDevice
 from bleak.backends.characteristic import BleakGATTCharacteristic
 import struct
@@ -66,7 +67,10 @@ class BLEManager:
             logger.info("Scanning for IoT Holter ECG devices...")
             
             # Scan for devices with IoT Holter name prefix
-            discovered_devices = await BleakScanner.discover(timeout=timeout)
+            discovered_devices = await asyncio.wait_for(
+                BleakScanner.discover(timeout=timeout),
+                timeout=timeout + 5,
+            )
             
             for device in discovered_devices:
                 if device.name and "IoT Holter" in device.name:
@@ -82,8 +86,18 @@ class BLEManager:
             if not devices:
                 logger.info("No IoT Holter devices found")
                 
+        except PermissionError as e:
+            logger.error(f"Bluetooth permission denied during scan: {e}")
+            raise
+        except BleakError as e:
+            logger.error(f"Bluetooth stack error during scan: {e}")
+            raise
+        except asyncio.TimeoutError as e:
+            logger.error("Bluetooth scan timed out")
+            raise RuntimeError("Bluetooth scan timed out") from e
         except Exception as e:
             logger.error(f"Error during device scan: {e}")
+            raise
         finally:
             self.is_scanning = False
             

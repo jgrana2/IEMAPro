@@ -14,13 +14,19 @@ from pathlib import Path
 
 import uvicorn
 import webview
-try:
-    from backend.main import app
-except ImportError:  # pragma: no cover
-    BACKEND_DIR = Path(__file__).resolve().parent
-    if str(BACKEND_DIR) not in sys.path:
-        sys.path.insert(0, str(BACKEND_DIR))
-    from main import app
+
+def _get_repo_root() -> Path:
+    if getattr(sys, "frozen", False):
+        # When packaged with PyInstaller, the executable lives inside the .app bundle.
+        return Path(sys.executable).resolve().parent.parent.parent
+    return Path(__file__).resolve().parent.parent
+
+
+REPO_ROOT = _get_repo_root()
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from backend.main import app
 
 
 def _run_backend(host: str, port: int) -> None:

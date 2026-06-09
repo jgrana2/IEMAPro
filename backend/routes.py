@@ -292,6 +292,11 @@ async def scan_ble_devices():
     try:
         devices = await ble_manager.scan_devices()
         return [device.model_dump(by_alias=True) for device in devices]
+    except PermissionError:
+        raise HTTPException(
+            status_code=403,
+            detail="Bluetooth permission is not granted to this app. Approve Bluetooth access in macOS System Settings and relaunch.",
+        )
     except Exception as error:
         logger.error(f"BLE scan error: {error}")
         raise HTTPException(status_code=500, detail="Failed to scan for BLE devices")
