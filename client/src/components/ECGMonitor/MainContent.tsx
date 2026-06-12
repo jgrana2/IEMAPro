@@ -1,4 +1,4 @@
-import { saveRecordingSession } from "@/lib/api";
+import { saveRecordingSession, updateRecordingSession } from "@/lib/api";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -150,17 +150,34 @@ export function MainContent({
     // Save session only when sessionSaved is set true and not already empty
     if (sessionSaved && ecgHistory.length > 0 && currentPatient && !hasSavedRef.current) {
       hasSavedRef.current = true;
-      const sessionPayload = {
-        sessionId: currentSession?.sessionId || `SESSION-${Date.now()}`,
-        patientId: currentPatient.id,
-        deviceId: 1, // TODO: Replace with actual device ID if available
-        duration: Math.floor(ecgHistory.length * 0.1),
-        heartRate: heartRate,
-        status: "completed",
-        ecgData: ecgHistory,
-        bufferSize: 250,
+      const duration = Math.floor(ecgHistory.length * 0.1);
+
+      const saveOrUpdate = async () => {
+        if (currentSession?.id) {
+          // Update existing session created on start
+          await updateRecordingSession(currentSession.id, {
+            duration,
+            heartRate,
+            status: "completed",
+            ecgData: ecgHistory,
+          });
+        } else {
+          // Fallback: create new session if none exists
+          const sessionPayload = {
+            sessionId: `SESSION-${Date.now()}`,
+            patientId: currentPatient.id,
+            deviceId: 1,
+            duration,
+            heartRate,
+            status: "completed",
+            ecgData: ecgHistory,
+            bufferSize: 250,
+          };
+          await saveRecordingSession(sessionPayload);
+        }
       };
-      saveRecordingSession(sessionPayload)
+
+      saveOrUpdate()
         .then(() => {
           onSessionSaved();
           setEcgHistory([]);

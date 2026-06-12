@@ -2,11 +2,13 @@
 
 import axios from 'axios';
 
-
-import type { InsertRecordingSession } from "../../../../backend/models";
-
-export async function saveRecordingSession(session: InsertRecordingSession) {
+export async function saveRecordingSession(session: any) {
   const res = await axios.post('/api/recording-sessions', session);
+  return res.data;
+}
+
+export async function updateRecordingSession(id: number, session: Partial<any>) {
+  const res = await axios.patch(`/api/recording-sessions/${id}`, session);
   return res.data;
 }
 

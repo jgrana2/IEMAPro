@@ -225,7 +225,7 @@ async def create_recording_session(session_data: InsertRecordingSession):
         raise HTTPException(status_code=500, detail="Failed to create recording session")
 
 @router.patch("/api/recording-sessions/{session_id}")
-async def update_recording_session(session_id: int, updates: UpdateRecordingSession):
+async def update_recording_session(session_id: int, updates: Dict[str, Any]):
     """Update recording session"""
     try:
         session = await storage.update_recording_session(session_id, updates)

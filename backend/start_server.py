@@ -47,18 +47,21 @@ def start_server():
     print("\nPress Ctrl+C to stop the server\n")
     
     try:
-        # Set environment variables
-        os.environ["PYTHONPATH"] = os.getcwd()
+        # Ensure repo root is in PYTHONPATH so `backend.*` imports work
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
+        os.environ["PYTHONPATH"] = repo_root
         
-        # Start the server
+        # Start the server from repo root so uvicorn can resolve `backend.main:app`
         subprocess.run([
-            sys.executable, "-m", "uvicorn", 
-            "main:app", 
+            sys.executable, "-m", "uvicorn",
+            "backend.main:app",
             "--host", "127.0.0.1",  # Use localhost to avoid socket issues on macOS
-            "--port", "3000", 
+            "--port", "3000",
             "--reload",
             "--log-level", "info"
-        ])
+        ], cwd=repo_root)
     except KeyboardInterrupt:
         print("\n\n🛑 Server stopped by user")
     except Exception as e:

@@ -82,11 +82,10 @@ if [ -f "$LOG_DIR/backend.pid" ] && kill -0 "$(cat "$LOG_DIR/backend.pid")" 2>/d
   echo "Backend running on port $BACKEND_PORT"
 else
   echo "Starting backend on port $BACKEND_PORT (logs => $LOG_DIR/backend.log)"
-  cd "$BACKEND_DIR"
-  nohup uvicorn main:app --host 0.0.0.0 --port "$BACKEND_PORT" --reload >"$LOG_DIR/backend.log" 2>&1 &
+  cd "$REPO_ROOT"
+  nohup uvicorn backend.main:app --host 0.0.0.0 --port "$BACKEND_PORT" --reload >"$LOG_DIR/backend.log" 2>&1 &
   BACKEND_PID=$!
   echo "$BACKEND_PID" > "$LOG_DIR/backend.pid"
-  cd "$REPO_ROOT"
   
   # Wait for backend to start and verify it's running
   sleep 3

@@ -503,7 +503,18 @@ class Storage:
         if hasattr(session, "model_dump"):
             updates = session.model_dump(by_alias=False, exclude_unset=True)
         else:
-            updates = dict(session)
+            raw = dict(session)
+            # Normalize camelCase keys (from frontend JSON) to snake_case
+            _key_map = {
+                "endTime": "end_time",
+                "heartRate": "heart_rate",
+                "ecgData": "ecg_data",
+                "bufferSize": "buffer_size",
+                "sessionId": "session_id",
+                "patientId": "patient_id",
+                "deviceId": "device_id",
+            }
+            updates = {_key_map.get(k, k): v for k, v in raw.items()}
 
         fields: List[str] = []
         values: List[Any] = []

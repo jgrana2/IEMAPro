@@ -8,12 +8,15 @@ import { ADS1298TestPanel } from "@/components/ECGMonitor/ADS1298TestPanel";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useWebSocketContext } from "@/contexts/WebSocketContext";
 import { usePythonBLE } from "@/hooks/usePythonBLE";
+import { useToast } from "@/hooks/use-toast";
+import { saveRecordingSession, updateRecordingSession } from "@/lib/api";
 import { Bot } from "lucide-react";
 
 export default function ECGMonitor() {
   const { leftExpanded, rightExpanded, toggleLeft, toggleRight } = useSidebarState();
   const { wsStatus, sendMessage, ecgData: wsEcgData, heartRate: wsHeartRate, signalQuality: wsSignalQuality } = useWebSocketContext();
 
+  const { toast } = useToast();
   const [currentPatient, setCurrentPatient] = useState<any>(null);
   const [currentSession, setCurrentSession] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -23,6 +26,7 @@ export default function ECGMonitor() {
   const [ecgData, setEcgData] = useState<{ [leadName: string]: number[] }>({});
   const [heartRate, setHeartRate] = useState(0);
   const [signalQuality, setSignalQuality] = useState<"good" | "poor" | "noise">("poor");
+  const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
 
   // Handle ECG data from BLE directly
   const handleECGData = (
@@ -134,19 +138,70 @@ export default function ECGMonitor() {
   }, [mergedEcgData, mergedHeartRate, mergedSignalQuality, wsEcgData, ecgData, wsStatus, bleStatus]);
 
   // Handlers for recording controls
-  const handleStartRecording = () => {
-    setIsRecording(true);
-    setIsPaused(false);
-    setSessionSaved(false);
+  const handleStartRecording = async () => {
+    if (!currentPatient) {
+      toast({
+        title: "No Patient Selected",
+        description: "Please select a patient before starting a recording.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const sessionId = `SESSION-${Date.now()}`;
+    try {
+      const session = await saveRecordingSession({
+        sessionId,
+        patientId: currentPatient.id,
+        deviceId: 1,
+        status: "recording",
+        bufferSize: 250,
+      });
+      setCurrentSession(session);
+      setIsRecording(true);
+      setIsPaused(false);
+      setSessionSaved(false);
+      setRecordingStartTime(Date.now());
+      toast({
+        title: "Recording Started",
+        description: `Session ${sessionId} created for ${currentPatient.name}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to start recording session. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePauseRecording = () => {
     setIsPaused((prev) => !prev);
   };
 
-  const handleStopRecording = () => {
+  const handleStopRecording = async () => {
+    if (currentSession && recordingStartTime) {
+      const duration = Math.floor((Date.now() - recordingStartTime) / 1000);
+      try {
+        await updateRecordingSession(currentSession.id, {
+          status: "completed",
+          endTime: new Date().toISOString(),
+          duration,
+        });
+        toast({
+          title: "Recording Stopped",
+          description: `Session ${currentSession.sessionId} finalized (${duration}s).`,
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to finalize recording session.",
+          variant: "destructive",
+        });
+      }
+    }
     setIsRecording(false);
     setIsPaused(false);
+    setRecordingStartTime(null);
   };
 
   const handleSaveSession = () => {
