@@ -547,6 +547,26 @@ class Storage:
         finally:
             conn.close()
 
+    async def delete_recording_session(self, id: int) -> bool:
+        """Delete a recording session by ID.
+
+        Args:
+            id: The session ID to delete
+
+        Returns:
+            True if deleted successfully, False if not found
+        """
+        conn = self._connect()
+        try:
+            cursor = conn.execute("DELETE FROM recording_sessions WHERE id = ?", (id,))
+            conn.commit()
+            return cursor.rowcount > 0
+        except sqlite3.Error as e:
+            logger.error("Database error deleting session: %s", e)
+            return False
+        finally:
+            conn.close()
+
     async def get_system_logs(self, limit: int = 50) -> List[SystemLog]:
         conn = self._connect()
         try:

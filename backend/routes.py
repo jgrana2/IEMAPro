@@ -238,6 +238,20 @@ async def update_recording_session(session_id: int, updates: Dict[str, Any]):
         logger.error(f"Failed to update recording session: {error}")
         raise HTTPException(status_code=500, detail="Failed to update recording session")
 
+@router.delete("/api/recording-sessions/{session_id}")
+async def delete_recording_session(session_id: int):
+    """Delete a recording session by ID"""
+    try:
+        success = await storage.delete_recording_session(session_id)
+        if not success:
+            raise HTTPException(status_code=404, detail=f"Recording session {session_id} not found")
+        return {"message": f"Session {session_id} deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as error:
+        logger.error(f"Failed to delete recording session: {error}")
+        raise HTTPException(status_code=500, detail="Failed to delete recording session")
+
 # AI Diagnosis route
 @router.post("/api/ai-diagnosis")
 async def ai_diagnosis(request: AIDiagnosisRequest):

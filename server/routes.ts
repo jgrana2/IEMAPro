@@ -136,6 +136,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/recording-sessions", async (req, res) => {
     try {
       const sessionData = insertRecordingSessionSchema.parse(req.body);
+
+      const patient = await storage.getPatient(sessionData.patientId);
+      if (!patient) {
+        return res.status(400).json({ error: "Invalid patient. Please select a valid patient before recording." });
+      }
+
+      const device = await storage.getBleDevice(sessionData.deviceId);
+      if (!device) {
+        return res.status(400).json({ error: "Invalid device. Please connect a valid BLE device before recording." });
+      }
+
+      if (!device.isConnected) {
+        await storage.updateBleDevice(device.id, { isConnected: true });
+      }
+
       const session = await storage.createRecordingSession(sessionData);
       res.status(201).json(session);
     } catch (error) {

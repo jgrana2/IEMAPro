@@ -62,13 +62,41 @@ async def test_backend():
         print(f"   ✓ Retrieved {len(devices)} BLE devices")
         print(f"   ✓ Retrieved {len(logs)} system logs")
         
+        # Test recording session creation and deletion
+        print("5. Testing recording session creation and deletion...")
+        from backend.models import InsertRecordingSession
+        session_data = InsertRecordingSession(
+            session_id=f"TEST-SESSION-{int(time.time())}",
+            patient_id=patient.id,
+            device_id=device.id,
+            duration=300,
+            heart_rate=72,
+            status="completed",
+            ecg_data={"Lead I": [10, 20, 30, 40, 50]},
+            buffer_size=250
+        )
+        session = await storage.create_recording_session(session_data)
+        print(f"   ✓ Created session: {session.session_id} (ID: {session.id})")
+
+        # Test delete recording session
+        print("6. Testing recording session deletion...")
+        delete_result = await storage.delete_recording_session(session.id)
+        print(f"   ✓ Deleted session (result: {delete_result})")
+
+        # Verify deletion
+        deleted_session = await storage.get_recording_session(session.id)
+        if deleted_session is None:
+            print("   ✓ Verified session no longer exists")
+        else:
+            raise RuntimeError("Session still exists after deletion")
+
         # Test completion log
         await storage.create_system_log({
             "level": "info",
             "message": "Backend test completed successfully",
             "source": "test"
         })
-        
+
         print("\n✅ All backend tests passed!")
         return True
         
