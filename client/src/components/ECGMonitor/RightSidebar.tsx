@@ -7,15 +7,16 @@ import { Separator } from "@/components/ui/separator";
 import {
   ChevronLeft,
   Play,
-  Pause,
-  Save,
   FileText,
   History,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { fetchAllSessions, fetchPatientSessions, fetchSessionById } from "@/lib/api";
+import { fetchPatientSessions, fetchSessionById, deleteSession } from "@/lib/api";
 import { generateECGReport, downloadPDF } from "@/lib/pdf-generator";
 import { formatDistance } from "date-fns";
+import { SessionNavigatorModal } from "./SessionNavigatorModal";
+import { useToast } from "@/hooks/use-toast";
 
 interface RightSidebarProps {
   isExpanded: boolean;
@@ -24,11 +25,9 @@ interface RightSidebarProps {
   onSessionSelect: (session: any) => void;
   currentPatient: any;
   isRecording: boolean;
-  isPaused: boolean;
-  onPauseRecording: () => void;
   onStopRecording: () => void;
-  onSaveSession: () => void;
   refreshSessionsTrigger: number;
+  onSessionsRefresh: () => void;
 }
 
 export function RightSidebar({
@@ -38,14 +37,15 @@ export function RightSidebar({
   onSessionSelect,
   currentPatient,
   isRecording,
-  isPaused,
-  onPauseRecording,
   onStopRecording,
-  onSaveSession,
   refreshSessionsTrigger,
+  onSessionsRefresh,
 }: RightSidebarProps) {
   const [recordingDuration, setRecordingDuration] = useState("00:00:00");
   const [durationSeconds, setDurationSeconds] = useState(0);
+  const [navigatorModalOpen, setNavigatorModalOpen] = useState(false);
+  const [selectedSessionForNavigator, setSelectedSessionForNavigator] = useState<any>(null);
+  const { toast } = useToast();
 
   // Timer effect: increments duration while recording
   useEffect(() => {
@@ -68,12 +68,7 @@ export function RightSidebar({
     setRecordingDuration(formatDuration(durationSeconds));
   }, [durationSeconds]);
 
-  const [allSessions, setAllSessions] = useState<any[]>([]);
   const [patientSessions, setPatientSessions] = useState<any[]>([]);
-
-  useEffect(() => {
-    fetchAllSessions().then(setAllSessions);
-  }, [refreshSessionsTrigger]);
 
   useEffect(() => {
     if (currentPatient?.id) {
@@ -82,6 +77,35 @@ export function RightSidebar({
       setPatientSessions([]);
     }
   }, [currentPatient, refreshSessionsTrigger]);
+
+  const handleSessionSelectForNavigator = (session: any) => {
+    setSelectedSessionForNavigator(session);
+    setNavigatorModalOpen(true);
+  };
+
+  const handleDeleteSession = async (sessionId: number | string): Promise<void> => {
+    try {
+      const numId = typeof sessionId === 'string' ? parseInt(sessionId, 10) : sessionId;
+      if (isNaN(numId)) {
+        throw new Error('Invalid session ID');
+      }
+      await deleteSession(numId);
+      toast({
+        title: "Success",
+        description: `Session ${sessionId} deleted`,
+      });
+      // Refresh sessions
+      onSessionsRefresh();
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Error",
+        description: `Failed to delete session: ${error instanceof Error ? error.message : "Unknown error"}`,
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
 
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -178,34 +202,14 @@ export function RightSidebar({
                               {recordingDuration}
                             </span>
                           </div>
-                          <div className="flex space-x-2">
-                            <Button
-                              size="sm"
-                              variant={isPaused ? "secondary" : "destructive"}
-                              className="flex-1"
-                              onClick={onPauseRecording}
-                            >
-                              <Pause className="h-3 w-3 mr-1" />
-                              {isPaused ? "Resume" : "Pause"}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1"
-                              onClick={onSaveSession}
-                            >
-                              <Save className="h-3 w-3 mr-1" />
-                              Save
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1"
-                              onClick={onStopRecording}
-                            >
-                              Stop
-                            </Button>
-                          </div>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="w-full"
+                            onClick={onStopRecording}
+                          >
+                            Stop Recording
+                          </Button>
                         </>
                       )}
                     </div>
@@ -221,12 +225,20 @@ export function RightSidebar({
                   Recent Sessions
                 </h3>
                 <div className="space-y-3">
-                  {(currentPatient ? patientSessions : allSessions).map(
-                    (session: any) => (
+                  {!currentPatient ? (
+                    <div className="text-sm text-muted-foreground text-center py-4">
+                      Select a patient to view recording sessions.
+                    </div>
+                  ) : patientSessions.length === 0 ? (
+                    <div className="text-sm text-muted-foreground text-center py-4">
+                      No sessions found for this patient.
+                    </div>
+                  ) : (
+                    patientSessions.map((session: any) => (
                       <Card
                         key={session.id}
                         className="cursor-pointer hover:bg-accent transition-colors"
-                        onClick={() => onSessionSelect(session)}
+                        onClick={() => handleSessionSelectForNavigator(session)}
                       >
                         <CardContent className="p-3">
                           <div className="space-y-2">
@@ -243,11 +255,9 @@ export function RightSidebar({
                               </span>
                             </div>
 
-                            {currentPatient && (
-                              <div className="text-xs text-muted-foreground">
-                                Patient: {currentPatient.name}
-                              </div>
-                            )}
+                            <div className="text-xs text-muted-foreground">
+                              Patient: {currentPatient.name}
+                            </div>
 
                             <div className="text-xs text-muted-foreground">
                               Duration:{" "}
@@ -257,19 +267,6 @@ export function RightSidebar({
                               | HR: {session.heartRate || "N/A"} BPM
                             </div>
 
-                            {/* Mini ECG Thumbnail */}
-                            <div className="h-8 bg-black rounded relative overflow-hidden">
-                              <svg
-                                className="w-full h-full"
-                                viewBox="0 0 100 20"
-                              >
-                                <path
-                                  d="M0,10 L10,10 L12,5 L14,15 L16,8 L18,12 L20,10 L30,10 L32,6 L34,14 L36,9 L38,11 L40,10 L50,10"
-                                  className="ecg-wave"
-                                />
-                              </svg>
-                            </div>
-
                             <div className="flex space-x-2">
                               <Button
                                 size="sm"
@@ -277,7 +274,7 @@ export function RightSidebar({
                                 className="flex-1 text-xs"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  onSessionSelect(session);
+                                  handleSessionSelectForNavigator(session);
                                 }}
                               >
                                 <Play className="h-3 w-3 mr-1" />
@@ -294,11 +291,23 @@ export function RightSidebar({
                               >
                                 <FileText className="h-3 w-3" />
                               </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteSession(session.id || session.sessionId);
+                                }}
+                                title="Delete session"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
                             </div>
                           </div>
                         </CardContent>
                       </Card>
-                    ),
+                    ))
                   )}
                 </div>
               </div>
@@ -325,6 +334,16 @@ export function RightSidebar({
           )}
         </ScrollArea>
       </div>
+
+      <SessionNavigatorModal
+        isOpen={navigatorModalOpen}
+        session={selectedSessionForNavigator}
+        onClose={() => {
+          setNavigatorModalOpen(false);
+          setSelectedSessionForNavigator(null);
+        }}
+        onDelete={handleDeleteSession}
+      />
     </aside>
   );
 }

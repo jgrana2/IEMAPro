@@ -20,7 +20,6 @@ export default function ECGMonitor() {
   const [currentPatient, setCurrentPatient] = useState<any>(null);
   const [currentSession, setCurrentSession] = useState<any>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   const [sessionSaved, setSessionSaved] = useState(false);
   const [refreshSessionsTrigger, setRefreshSessionsTrigger] = useState(0);
   const [ecgData, setEcgData] = useState<{ [leadName: string]: number[] }>({});
@@ -147,6 +146,16 @@ export default function ECGMonitor() {
       });
       return;
     }
+
+    if (bleStatus !== "connected") {
+      toast({
+        title: "No Device Connected",
+        description: "Please connect a BLE ECG device before starting a recording.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const sessionId = `SESSION-${Date.now()}`;
     try {
       const session = await saveRecordingSession({
@@ -158,7 +167,6 @@ export default function ECGMonitor() {
       });
       setCurrentSession(session);
       setIsRecording(true);
-      setIsPaused(false);
       setSessionSaved(false);
       setRecordingStartTime(Date.now());
       toast({
@@ -166,48 +174,25 @@ export default function ECGMonitor() {
         description: `Session ${sessionId} created for ${currentPatient.name}.`,
       });
     } catch (error) {
+      console.error("Recording start error:", error);
       toast({
         title: "Error",
-        description: "Failed to start recording session. Please try again.",
+        description: `Failed to start recording: ${error instanceof Error ? error.message : "Unknown error"}`,
         variant: "destructive",
       });
     }
   };
 
-  const handlePauseRecording = () => {
-    setIsPaused((prev) => !prev);
-  };
-
   const handleStopRecording = async () => {
-    if (currentSession && recordingStartTime) {
-      const duration = Math.floor((Date.now() - recordingStartTime) / 1000);
-      try {
-        await updateRecordingSession(currentSession.id, {
-          status: "completed",
-          endTime: new Date().toISOString(),
-          duration,
-        });
-        toast({
-          title: "Recording Stopped",
-          description: `Session ${currentSession.sessionId} finalized (${duration}s).`,
-        });
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to finalize recording session.",
-          variant: "destructive",
-        });
-      }
+    const saveRecording = window.confirm("Save this recording?");
+    if (saveRecording) {
+      // Keep recordingStartTime until the save completes so MainContent
+      // can compute the real duration; it is cleared in onSessionSaved.
+      setSessionSaved(true);
+    } else {
+      setRecordingStartTime(null);
     }
     setIsRecording(false);
-    setIsPaused(false);
-    setRecordingStartTime(null);
-  };
-
-  const handleSaveSession = () => {
-    setSessionSaved(true); // MainContent will react to this and save
-    setIsRecording(false);
-    setIsPaused(false);
   };
 
   return (
@@ -244,18 +229,17 @@ export default function ECGMonitor() {
               currentPatient={currentPatient}
               currentSession={currentSession}
               isRecording={isRecording}
-              isPaused={isPaused}
               sessionSaved={sessionSaved}
               onStartRecording={handleStartRecording}
-              onPauseRecording={handlePauseRecording}
               onStopRecording={handleStopRecording}
-              onSaveSession={handleSaveSession}
               onSessionSaved={() => {
                 setRefreshSessionsTrigger((v) => v + 1);
                 setSessionSaved(false); // reset after save
+                setRecordingStartTime(null);
               }}
               bleStatus={bleStatus}
               wsStatus={wsStatus}
+              recordingStartTime={recordingStartTime}
               ecgData={mergedEcgData}
               heartRate={mergedHeartRate}
               signalQuality={mergedSignalQuality}
@@ -316,11 +300,9 @@ export default function ECGMonitor() {
         onSessionSelect={setCurrentSession}
         currentPatient={currentPatient}
         isRecording={isRecording}
-        isPaused={isPaused}
-        onPauseRecording={handlePauseRecording}
         onStopRecording={handleStopRecording}
-        onSaveSession={handleSaveSession}
         refreshSessionsTrigger={refreshSessionsTrigger}
+        onSessionsRefresh={() => setRefreshSessionsTrigger((prev) => prev + 1)}
       />
 
       {/* Mobile Overlay */}

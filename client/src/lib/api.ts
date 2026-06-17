@@ -26,3 +26,8 @@ export async function fetchSessionById(sessionId: number) {
   const res = await axios.get(`/api/recording-sessions/${sessionId}`);
   return res.data;
 }
+
+export async function deleteSession(sessionId: number | string) {
+  const res = await axios.delete(`/api/recording-sessions/${sessionId}`);
+  return res.data;
+}

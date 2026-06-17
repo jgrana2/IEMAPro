@@ -1,4 +1,4 @@
-import { saveRecordingSession, updateRecordingSession } from "@/lib/api";
+import { updateRecordingSession } from "@/lib/api";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,15 +24,13 @@ interface MainContentProps {
   currentPatient: any;
   currentSession: any;
   isRecording: boolean;
-  isPaused: boolean;
   sessionSaved: boolean;
   onStartRecording: () => void;
-  onPauseRecording: () => void;
   onStopRecording: () => void;
-  onSaveSession: () => void;
   onSessionSaved: () => void;
   bleStatus: string;
   wsStatus: string;
+  recordingStartTime: number | null;
   ecgData?: { [leadName: string]: number[] };
   heartRate?: number;
   signalQuality?: "good" | "poor" | "noise";
@@ -99,15 +97,13 @@ export function MainContent({
   currentPatient,
   currentSession,
   isRecording,
-  isPaused,
   sessionSaved,
   onStartRecording,
-  onPauseRecording,
   onStopRecording,
-  onSaveSession,
   onSessionSaved,
   bleStatus,
   wsStatus,
+  recordingStartTime,
   ecgData = {},
   heartRate = 0,
   signalQuality = "poor",
@@ -132,8 +128,9 @@ export function MainContent({
   // Store ECG data for history when recording with real ADS1298 data
   // Prevent multiple saves per click
   const hasSavedRef = useRef(false);
+
   useEffect(() => {
-    if (isRecording && !isPaused && Object.keys(ecgData).length > 0) {
+    if (isRecording && Object.keys(ecgData).length > 0) {
       const timestamp = Date.now();
       const leadsData: { [leadName: string]: number } = {};
       Object.entries(processedEcgData).forEach(([leadName, dataArray]) => {
@@ -145,36 +142,38 @@ export function MainContent({
         heartRate,
         quality: signalQuality,
       };
-      setEcgHistory((prev) => [...prev.slice(-999), ecgDataPoint]);
+      setEcgHistory((prev) => [...prev.slice(-2499), ecgDataPoint]);
     }
     // Save session only when sessionSaved is set true and not already empty
     if (sessionSaved && ecgHistory.length > 0 && currentPatient && !hasSavedRef.current) {
       hasSavedRef.current = true;
-      const duration = Math.floor(ecgHistory.length * 0.1);
+      const duration = recordingStartTime
+        ? Math.floor((Date.now() - recordingStartTime) / 1000)
+        : 0;
+
+      // Organize ECG data by lead name
+      const ecgDataByLead: { [leadName: string]: number[] } = {};
+      ECG_LEADS.forEach((lead) => {
+        ecgDataByLead[lead.name] = [];
+      });
+
+      ecgHistory.forEach((dataPoint) => {
+        Object.entries(dataPoint.leads).forEach(([leadName, value]) => {
+          if (!ecgDataByLead[leadName]) {
+            ecgDataByLead[leadName] = [];
+          }
+          ecgDataByLead[leadName].push(value);
+        });
+      });
 
       const saveOrUpdate = async () => {
-        if (currentSession?.id) {
-          // Update existing session created on start
-          await updateRecordingSession(currentSession.id, {
-            duration,
-            heartRate,
-            status: "completed",
-            ecgData: ecgHistory,
-          });
-        } else {
-          // Fallback: create new session if none exists
-          const sessionPayload = {
-            sessionId: `SESSION-${Date.now()}`,
-            patientId: currentPatient.id,
-            deviceId: 1,
-            duration,
-            heartRate,
-            status: "completed",
-            ecgData: ecgHistory,
-            bufferSize: 250,
-          };
-          await saveRecordingSession(sessionPayload);
-        }
+        await updateRecordingSession(currentSession.id, {
+          duration,
+          heartRate,
+          status: "completed",
+          endTime: new Date().toISOString(),
+          ecgData: ecgDataByLead,
+        });
       };
 
       saveOrUpdate()
@@ -195,7 +194,7 @@ export function MainContent({
     if (!isRecording && !sessionSaved && ecgHistory.length > 0) {
       setEcgHistory([]);
     }
-  }, [isRecording, isPaused, ecgData, heartRate, signalQuality, ecgHistory, sessionSaved, currentPatient, currentSession, toast, onSessionSaved]);
+  }, [isRecording, ecgData, heartRate, signalQuality, ecgHistory, sessionSaved, currentPatient, currentSession, recordingStartTime, toast, onSessionSaved]);
 
   const handleGeneratePDF = async () => {
     if (!currentPatient) {
