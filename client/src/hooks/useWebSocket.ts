@@ -57,10 +57,9 @@ export function useWebSocket() {
           // console.log('WebSocket message received:', message);
           setLastMessage(message);
 
-          // Handle ECG data from Python backend (both processed and raw)
-          if (message.type === 'ecg_data' && message.leadData) {
-            // Direct processed ECG data from Python backend
-            const maxBufferSize = 2500;
+        // Handle ECG data from Python backend (both processed and raw)
+        if (message.type === 'ecg_data' && message.leadData) {
+          // Direct processed ECG data from Python backend
             const newBuffer = { ...ecgBufferRef.current };
 
             Object.entries(message.leadData).forEach(([leadName, newSamples]) => {
@@ -70,11 +69,6 @@ export function useWebSocket() {
               
               // Append new samples
               newBuffer[leadName] = [...newBuffer[leadName], ...(newSamples as number[])];
-              
-              // Keep only the most recent samples
-              if (newBuffer[leadName].length > maxBufferSize) {
-                newBuffer[leadName] = newBuffer[leadName].slice(-maxBufferSize);
-              }
             });
 
             ecgBufferRef.current = newBuffer;

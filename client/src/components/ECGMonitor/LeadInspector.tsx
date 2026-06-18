@@ -1,8 +1,10 @@
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Eye, EyeOff, X } from 'lucide-react';
 import { ECGCanvas } from './ECGCanvas';
+import { ZoomableTimeline } from './ZoomableTimeline';
 
 const LEAD_NAMES = [
   'Lead I', 'Lead II', 'Lead III',
@@ -18,6 +20,14 @@ interface LeadInspectorProps {
   onLeadSelect: (leadName: string | null) => void;
   visibleLeads: Set<string>;
   onVisibleLeadsChange: (leads: Set<string>) => void;
+  featuredLead?: string;
+  onPan?: (deltaPixels: number, containerWidth: number) => void;
+  onZoomAt?: (direction: 'in' | 'out', centerTime: number) => void;
+  zoomLevel?: number;
+  sessionDuration?: number;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
+  onZoomToFit?: () => void;
 }
 
 export function LeadInspector({
@@ -28,14 +38,22 @@ export function LeadInspector({
   onLeadSelect,
   visibleLeads,
   onVisibleLeadsChange,
+  featuredLead,
+  onPan,
+  onZoomAt,
+  zoomLevel = 1,
+  sessionDuration,
+  onZoomIn,
+  onZoomOut,
+  onZoomToFit,
 }: LeadInspectorProps) {
-  // Calculate visible samples based on time window
+  // Calculate visible samples based on time window using consistent session duration
   const getVisibleSamples = (leadData: number[]) => {
-    const sampleRate = 500; // Hz
-    const totalDuration = (leadData.length / sampleRate) * 1000; // Convert to ms
+    // Use sessionDuration if available, otherwise calculate from data
+    const duration = sessionDuration ?? (leadData.length / 500) * 1000;
 
-    const startIndex = Math.floor((timeWindowStart / totalDuration) * leadData.length);
-    const endIndex = Math.ceil((timeWindowEnd / totalDuration) * leadData.length);
+    const startIndex = Math.floor((timeWindowStart / duration) * leadData.length);
+    const endIndex = Math.ceil((timeWindowEnd / duration) * leadData.length);
 
     return leadData.slice(Math.max(0, startIndex), Math.min(leadData.length, endIndex));
   };
@@ -50,12 +68,37 @@ export function LeadInspector({
     onVisibleLeadsChange(newVisibleLeads);
   };
 
+  // Drag-to-pan state and handlers for the detail view.
+  const detailPanelRef = useRef<HTMLDivElement>(null);
+  const [isDraggingDetail, setIsDraggingDetail] = useState(false);
+
+  const handleDetailMouseDown = () => setIsDraggingDetail(true);
+  const handleDetailMouseUp = () => setIsDraggingDetail(false);
+  const handleDetailMouseLeave = () => setIsDraggingDetail(false);
+
+  const handleDetailMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDraggingDetail || !detailPanelRef.current || !onPan) return;
+    onPan(e.movementX, detailPanelRef.current.clientWidth);
+  };
+
+  const handleDetailWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!detailPanelRef.current || !onZoomAt) return;
+    e.preventDefault();
+    const el = detailPanelRef.current;
+    const rect = el.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left - el.clientLeft;
+    const contentWidth = el.clientWidth;
+    const timeUnderMouse =
+      timeWindowStart + (mouseX / contentWidth) * (timeWindowEnd - timeWindowStart);
+    onZoomAt(e.deltaY < 0 ? 'in' : 'out', timeUnderMouse);
+  };
+
   // If a lead is selected for detail view, show expanded view
   if (selectedLead && leads[selectedLead]) {
     const visibleData = getVisibleSamples(leads[selectedLead]);
 
     return (
-      <div className="space-y-4 p-4 border rounded-lg bg-card">
+      <div className="space-y-4 p-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">{selectedLead} - Detail View</h3>
           <Button
@@ -68,21 +111,54 @@ export function LeadInspector({
           </Button>
         </div>
 
-        {/* Full-width ECG canvas */}
-        <div className="h-64 bg-white rounded border overflow-hidden">
-          {visibleData.length > 0 ? (
-            <ECGCanvas
-              leadName={selectedLead}
-              data={visibleData}
-              isActive={true}
-              width={800}
-              height={256}
+        {/* ECG canvas with integrated timeline ruler below */}
+        <div className="flex flex-col">
+          {/* Full-width ECG canvas */}
+          <div
+            ref={detailPanelRef}
+            className={`h-64 bg-white border overflow-hidden ${
+              isDraggingDetail ? 'cursor-grabbing' : 'cursor-grab'
+            }`}
+            onMouseDown={handleDetailMouseDown}
+            onMouseUp={handleDetailMouseUp}
+            onMouseLeave={handleDetailMouseLeave}
+            onMouseMove={handleDetailMouseMove}
+            onWheel={handleDetailWheel}
+          >
+            {visibleData.length > 0 ? (
+              <ECGCanvas
+                leadName={selectedLead}
+                data={visibleData}
+                isActive={true}
+                width={800}
+                height={256}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground">
+                No data in visible time range
+              </div>
+            )}
+          </div>
+
+          {/* Timeline ruler positioned directly below graph */}
+          {sessionDuration !== undefined && (
+            <ZoomableTimeline
+              totalDuration={sessionDuration}
+              zoomLevel={zoomLevel}
+              timeWindowStart={timeWindowStart}
+              timeWindowEnd={timeWindowEnd}
+              onZoomChange={(level) => {
+                if (level > zoomLevel && onZoomIn) onZoomIn();
+                else if (level < zoomLevel && onZoomOut) onZoomOut();
+              }}
+              onZoomToFit={onZoomToFit || (() => {})}
+              onTimeClick={() => {}}
             />
-          ) : (
-            <div className="h-full flex items-center justify-center text-muted-foreground">
-              No data in visible time range
-            </div>
           )}
+        </div>
+
+        <div className="text-xs text-muted-foreground">
+          💡 Drag to pan • Wheel to zoom
         </div>
 
         {/* Lead statistics */}
@@ -142,6 +218,9 @@ export function LeadInspector({
       {/* Lead Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 px-4">
         {LEAD_NAMES.map((leadName) => {
+          // The featured lead is rendered in the modal's upper panel.
+          if (featuredLead && leadName === featuredLead) return null;
+
           const isVisible = visibleLeads.has(leadName);
           const leadData = leads[leadName] || [];
           const visibleData = getVisibleSamples(leadData);

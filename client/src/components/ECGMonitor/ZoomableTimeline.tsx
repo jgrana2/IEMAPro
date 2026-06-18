@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 
 interface ZoomableTimelineProps {
   totalDuration: number; // milliseconds
@@ -8,8 +8,6 @@ interface ZoomableTimelineProps {
   timeWindowStart: number;
   timeWindowEnd: number;
   onZoomChange: (level: number) => void;
-  onPanLeft: () => void;
-  onPanRight: () => void;
   onZoomToFit: () => void;
   onTimeClick: (timestamp: number) => void;
 }
@@ -20,13 +18,10 @@ export function ZoomableTimeline({
   timeWindowStart,
   timeWindowEnd,
   onZoomChange,
-  onPanLeft,
-  onPanRight,
   onZoomToFit,
   onTimeClick,
 }: ZoomableTimelineProps) {
   const timelineRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
 
   const formatTime = (ms: number): string => {
     const seconds = Math.floor(ms / 1000);
@@ -50,27 +45,6 @@ export function ZoomableTimeline({
     onTimeClick(Math.max(0, Math.min(totalDuration, timestamp)));
   };
 
-  const handleDrag = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-
-    const delta = e.movementX;
-    const timelineWidth = timelineRef.current?.offsetWidth || 1;
-    const timePerPixel = (timeWindowEnd - timeWindowStart) / timelineWidth;
-    const timeDelta = -delta * timePerPixel;
-
-    const newStart = Math.max(0, timeWindowStart + timeDelta);
-    const newEnd = Math.min(totalDuration, timeWindowEnd + timeDelta);
-
-    // Adjust if we're at boundaries
-    if (newStart === 0) {
-      onTimeClick(timeWindowStart);
-    } else if (newEnd === totalDuration) {
-      onTimeClick(timeWindowEnd - (timeWindowEnd - timeWindowStart) / 2);
-    } else {
-      onTimeClick(newStart + (newEnd - newStart) / 2);
-    }
-  };
-
   // Generate time markers
   const timeMarkers: number[] = [];
   const visibleRange = timeWindowEnd - timeWindowStart;
@@ -83,82 +57,12 @@ export function ZoomableTimeline({
   }
 
   return (
-    <div className="space-y-3 p-4 border rounded-lg bg-card">
-      {/* Zoom Controls */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onZoomChange(Math.max(1, zoomLevel - 1))}
-            disabled={zoomLevel === 1}
-            title="Zoom Out (Ctrl+-)"
-          >
-            <ZoomOut className="h-4 w-4" />
-          </Button>
-
-          <div className="text-xs text-muted-foreground px-2">
-            Zoom: {Math.round((1 / zoomLevel) * 100)}%
-          </div>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onZoomChange(Math.min(5, zoomLevel + 1))}
-            disabled={zoomLevel === 5}
-            title="Zoom In (Ctrl++)"
-          >
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onZoomToFit}
-            disabled={zoomLevel === 1}
-            title="Fit All"
-          >
-            <Maximize2 className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Pan Controls */}
-        <div className="flex items-center space-x-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onPanLeft}
-            disabled={timeWindowStart === 0}
-            title="Pan Left (← arrow)"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-
-          <div className="text-xs text-muted-foreground px-2">
-            {formatTime(timeWindowStart)} - {formatTime(timeWindowEnd)}
-          </div>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onPanRight}
-            disabled={timeWindowEnd === totalDuration}
-            title="Pan Right (→ arrow)"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Timeline Ruler */}
+    <div className="flex flex-col">
+      {/* Timeline Ruler - directly under graph */}
       <div
         ref={timelineRef}
-        className="h-16 bg-muted border rounded cursor-pointer relative overflow-hidden"
+        className="h-8 bg-muted border-l border-r border-b cursor-pointer relative overflow-hidden"
         onClick={handleTimelineClick}
-        onMouseDown={() => setIsDragging(true)}
-        onMouseUp={() => setIsDragging(false)}
-        onMouseLeave={() => setIsDragging(false)}
-        onMouseMove={handleDrag}
       >
         {/* Time markers */}
         {timeMarkers.map((time) => {
@@ -177,13 +81,47 @@ export function ZoomableTimeline({
           );
         })}
 
-        {/* Current position indicator */}
-        <div className="absolute top-0 bottom-0 w-0.5 bg-primary" />
+        {/* Range handles at extremes */}
+        <div
+          className="absolute top-0 bottom-0 w-1 bg-primary/50 hover:bg-primary cursor-col-resize"
+          style={{ left: '0%' }}
+          title="Drag to adjust start"
+        />
+        <div
+          className="absolute top-0 bottom-0 w-1 bg-primary/50 hover:bg-primary cursor-col-resize"
+          style={{ right: '0%' }}
+          title="Drag to adjust end"
+        />
       </div>
 
-      {/* Keyboard hint */}
-      <div className="text-xs text-muted-foreground">
-        💡 Click to navigate • Drag to pan • Arrow keys (← →) to move
+      {/* Zoom Controls Below */}
+      <div className="flex items-center justify-center space-x-2 p-2 border-l border-r border-b bg-background">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onZoomChange(Math.max(1, zoomLevel - 1))}
+          disabled={zoomLevel === 1}
+          title="Zoom Out"
+        >
+          <ZoomOut className="h-4 w-4" />
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onZoomChange(Math.min(5, zoomLevel + 1))}
+          disabled={zoomLevel === 5}
+          title="Zoom In"
+        >
+          <ZoomIn className="h-4 w-4" />
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onZoomToFit}
+          title="Fit All"
+        >
+          <Maximize2 className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );

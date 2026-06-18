@@ -13,3 +13,4 @@ attached_assets/
 build/
 ecg_monitor.db
 release/
+.playwright-mcp/

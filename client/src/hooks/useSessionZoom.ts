@@ -11,6 +11,7 @@ export function useSessionZoom(sessionDuration: number) {
   const [timeWindowStart, setTimeWindowStart] = useState(0);
   const [timeWindowEnd, setTimeWindowEnd] = useState(sessionDuration);
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
+  const [featuredLead, setFeaturedLead] = useState<string | null>(null);
   const [visibleLeads, setVisibleLeads] = useState<Set<string>>(
     new Set(LEAD_NAMES)
   );
@@ -138,11 +139,38 @@ export function useSessionZoom(sessionDuration: number) {
     setSelectedLead(leadName);
   };
 
+  const selectFeaturedLead = (leadName: string | null) => {
+    setFeaturedLead(leadName);
+  };
+
+  const panByPixels = (deltaPixels: number, containerWidth: number) => {
+    if (containerWidth === 0) return;
+    const visibleRange = timeWindowEnd - timeWindowStart;
+    const timeDelta = (-deltaPixels / containerWidth) * visibleRange;
+    const currentCenter = (timeWindowStart + timeWindowEnd) / 2;
+    panToTime(currentCenter + timeDelta);
+  };
+
+  const zoomAt = (direction: 'in' | 'out', centerTime: number) => {
+    const newLevel =
+      direction === 'in'
+        ? Math.min(5, zoomLevel + 1)
+        : Math.max(1, zoomLevel - 1);
+
+    if (newLevel === zoomLevel) return;
+
+    const { start, end } = getTimeRangeForZoom(newLevel, centerTime);
+    setZoomLevel(newLevel);
+    setTimeWindowStart(start);
+    setTimeWindowEnd(end);
+  };
+
   return {
     zoomLevel,
     timeWindowStart,
     timeWindowEnd,
     selectedLead,
+    featuredLead,
     visibleLeads,
     zoomIn,
     zoomOut,
@@ -151,7 +179,10 @@ export function useSessionZoom(sessionDuration: number) {
     panRight,
     panToTime,
     zoomToSelection,
+    panByPixels,
+    zoomAt,
     toggleLeadVisibility,
     selectLead,
+    selectFeaturedLead,
   };
 }

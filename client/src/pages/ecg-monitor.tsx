@@ -33,10 +33,7 @@ export default function ECGMonitor() {
     hr: number,
     quality: string,
   ) => {
-
-    // Update ECG data buffer with rolling window using functional state update
-    const maxBufferSize = 2500; // Keep ~5 seconds at 500Hz
-    
+    // Accumulate the full session; clear on stop/save instead of truncating here.
     setEcgData(currentBuffer => {
       const newBuffer = { ...currentBuffer };
       
@@ -45,13 +42,8 @@ export default function ECGMonitor() {
           newBuffer[leadName] = [];
         }
 
-        // Append new samples to existing buffer
+        // Append new samples to existing buffer.
         newBuffer[leadName] = [...newBuffer[leadName], ...newSamples];
-
-        // Keep only the most recent samples
-        if (newBuffer[leadName].length > maxBufferSize) {
-          newBuffer[leadName] = newBuffer[leadName].slice(-maxBufferSize);
-        }
       });
       
       return newBuffer;

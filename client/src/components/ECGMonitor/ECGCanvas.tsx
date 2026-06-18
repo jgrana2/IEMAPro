@@ -6,9 +6,21 @@ interface ECGCanvasProps {
   isActive: boolean;
   width?: number;
   height?: number;
+  timeWindowStart?: number;
+  timeWindowEnd?: number;
+  sessionDuration?: number;
 }
 
-export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }: ECGCanvasProps) {
+export function ECGCanvas({
+  leadName,
+  data,
+  isActive,
+  width = 300,
+  height = 80,
+  timeWindowStart = 0,
+  timeWindowEnd,
+  sessionDuration,
+}: ECGCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
   const dataRef = useRef<number[]>(data);
@@ -20,8 +32,16 @@ export function ECGCanvas({ leadName, data, isActive, width = 300, height = 80 }
   const drawInactiveRef = useRef<() => void>(() => {});
 
   useEffect(() => {
-    dataRef.current = data;
-  }, [data]);
+    // Filter data to visible time window if provided
+    if (timeWindowStart !== undefined && timeWindowEnd !== undefined && sessionDuration !== undefined) {
+      const sampleRate = 500; // Hz
+      const startIndex = Math.floor((timeWindowStart / sessionDuration) * data.length);
+      const endIndex = Math.ceil((timeWindowEnd / sessionDuration) * data.length);
+      dataRef.current = data.slice(Math.max(0, startIndex), Math.min(data.length, endIndex));
+    } else {
+      dataRef.current = data;
+    }
+  }, [data, timeWindowStart, timeWindowEnd, sessionDuration]);
 
   useEffect(() => {
     activeRef.current = isActive;

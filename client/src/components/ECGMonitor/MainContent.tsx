@@ -123,6 +123,30 @@ export function MainContent({
   const typedSystemLogs = systemLogs as any[];
   const processedEcgData = useMemo(() => calculateDerivedLeads(ecgData), [ecgData]);
 
+  // Show rolling 10-second window for live data (when device connected or recording)
+  const displayEcgData = useMemo(() => {
+    const hasLiveData = Object.keys(processedEcgData).length > 0;
+    const isLive = bleStatus === "connected" || wsStatus === "connected";
+
+    if (!hasLiveData || !isLive) {
+      return processedEcgData;
+    }
+
+    const sampleRate = 500; // Hz
+    const tenSecondsInSamples = sampleRate * 10; // 5000 samples for 10 seconds
+
+    const filtered: { [leadName: string]: number[] } = {};
+    Object.entries(processedEcgData).forEach(([leadName, samples]) => {
+      if (Array.isArray(samples)) {
+        // Keep only the last 10 seconds worth of samples
+        const startIndex = Math.max(0, samples.length - tenSecondsInSamples);
+        filtered[leadName] = samples.slice(startIndex);
+      }
+    });
+
+    return filtered;
+  }, [processedEcgData, bleStatus, wsStatus]);
+
   // Heart rate now comes from real ADS1298 data via WebSocket
 
   // Store ECG data for history when recording with real ADS1298 data
@@ -142,29 +166,14 @@ export function MainContent({
         heartRate,
         quality: signalQuality,
       };
-      setEcgHistory((prev) => [...prev.slice(-2499), ecgDataPoint]);
+      setEcgHistory((prev) => [...prev, ecgDataPoint]);
     }
     // Save session only when sessionSaved is set true and not already empty
-    if (sessionSaved && ecgHistory.length > 0 && currentPatient && !hasSavedRef.current) {
+    if (sessionSaved && Object.keys(ecgData).length > 0 && currentPatient && !hasSavedRef.current) {
       hasSavedRef.current = true;
       const duration = recordingStartTime
         ? Math.floor((Date.now() - recordingStartTime) / 1000)
         : 0;
-
-      // Organize ECG data by lead name
-      const ecgDataByLead: { [leadName: string]: number[] } = {};
-      ECG_LEADS.forEach((lead) => {
-        ecgDataByLead[lead.name] = [];
-      });
-
-      ecgHistory.forEach((dataPoint) => {
-        Object.entries(dataPoint.leads).forEach(([leadName, value]) => {
-          if (!ecgDataByLead[leadName]) {
-            ecgDataByLead[leadName] = [];
-          }
-          ecgDataByLead[leadName].push(value);
-        });
-      });
 
       const saveOrUpdate = async () => {
         await updateRecordingSession(currentSession.id, {
@@ -172,7 +181,7 @@ export function MainContent({
           heartRate,
           status: "completed",
           endTime: new Date().toISOString(),
-          ecgData: ecgDataByLead,
+          ecgData: processedEcgData,
         });
       };
 
@@ -194,7 +203,7 @@ export function MainContent({
     if (!isRecording && !sessionSaved && ecgHistory.length > 0) {
       setEcgHistory([]);
     }
-  }, [isRecording, ecgData, heartRate, signalQuality, ecgHistory, sessionSaved, currentPatient, currentSession, recordingStartTime, toast, onSessionSaved]);
+  }, [isRecording, ecgData, processedEcgData, heartRate, signalQuality, ecgHistory, sessionSaved, currentPatient, currentSession, recordingStartTime, toast, onSessionSaved]);
 
   const handleGeneratePDF = async () => {
     if (!currentPatient) {
@@ -359,8 +368,8 @@ export function MainContent({
           <CardContent className="p-6">
             <ECGCarousel
               leads={ECG_LEADS.map((lead) => {
-                // Get the data for this lead (now including derived leads)
-                const leadData = processedEcgData[lead.name] || [];
+                // Get the data for this lead (filtered to rolling 10-second window during recording)
+                const leadData = displayEcgData[lead.name] || [];
 
                 // Return the new object with data attached
                 return {

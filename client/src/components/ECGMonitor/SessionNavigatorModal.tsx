@@ -1,11 +1,24 @@
+import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Trash2, X } from 'lucide-react';
-import { ZoomableTimeline } from './ZoomableTimeline';
 import { LeadInspector } from './LeadInspector';
 import { useSessionZoom } from '@/hooks/useSessionZoom';
 import { formatDistance } from 'date-fns';
+
+const LEAD_NAMES = [
+  'Lead I', 'Lead II', 'Lead III',
+  'aVR', 'aVL', 'aVF',
+  'V1', 'V2', 'V3', 'V4', 'V5', 'V6'
+];
 
 interface SessionNavigatorModalProps {
   isOpen: boolean;
@@ -26,15 +39,25 @@ export function SessionNavigatorModal({
     timeWindowEnd,
     selectedLead,
     visibleLeads,
+    panByPixels,
+    zoomAt,
+    toggleLeadVisibility,
+    selectLead,
     zoomIn,
     zoomOut,
     zoomToFit,
-    panLeft,
-    panRight,
-    panToTime,
-    toggleLeadVisibility,
-    selectLead,
   } = useSessionZoom(session?.duration ? session.duration * 1000 : 60000);
+
+  const leads = useMemo(() => {
+    if (!session?.ecgData) return {};
+
+    return Object.fromEntries(
+      Object.entries(session.ecgData).map(([key, data]) => [
+        key,
+        Array.isArray(data) ? data : [],
+      ])
+    );
+  }, [session?.ecgData]);
 
   if (!session) return null;
 
@@ -51,14 +74,6 @@ export function SessionNavigatorModal({
   };
 
   const sessionDuration = session.duration ? session.duration * 1000 : 60000;
-  const leads = session.ecgData
-    ? Object.fromEntries(
-        Object.entries(session.ecgData).map(([key, data]) => [
-          key,
-          Array.isArray(data) ? data : [],
-        ])
-      )
-    : {};
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -119,23 +134,7 @@ export function SessionNavigatorModal({
             </div>
           </div>
 
-          {/* Timeline */}
-          <ZoomableTimeline
-            totalDuration={sessionDuration}
-            zoomLevel={zoomLevel}
-            timeWindowStart={timeWindowStart}
-            timeWindowEnd={timeWindowEnd}
-            onZoomChange={(level) => {
-              if (level > zoomLevel) zoomIn();
-              else zoomOut();
-            }}
-            onPanLeft={panLeft}
-            onPanRight={panRight}
-            onZoomToFit={zoomToFit}
-            onTimeClick={panToTime}
-          />
-
-          {/* Lead Inspector */}
+          {/* Lead Inspector - respects zoom/pan state with timeline in detail view */}
           <LeadInspector
             leads={leads}
             timeWindowStart={timeWindowStart}
@@ -143,8 +142,14 @@ export function SessionNavigatorModal({
             selectedLead={selectedLead}
             onLeadSelect={selectLead}
             visibleLeads={visibleLeads}
+            onPan={panByPixels}
+            onZoomAt={zoomAt}
+            zoomLevel={zoomLevel}
+            sessionDuration={sessionDuration}
+            onZoomIn={zoomIn}
+            onZoomOut={zoomOut}
+            onZoomToFit={zoomToFit}
             onVisibleLeadsChange={(newLeads) => {
-              // Update visible leads based on the new set
               newLeads.forEach((lead) => {
                 if (!visibleLeads.has(lead)) {
                   toggleLeadVisibility(lead);
